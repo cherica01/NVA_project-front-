@@ -10,7 +10,8 @@ node_modules
 
 # testing
 /coverage
-
+.next
+.env
 # next.js
 /.next/
 /out/
