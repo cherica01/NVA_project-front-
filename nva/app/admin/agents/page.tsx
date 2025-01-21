@@ -14,7 +14,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { FaEdit, FaTrashAlt } from "react-icons/fa"; // Icônes
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
 
 // Interface pour définir un agent
 interface Agent {
@@ -26,8 +26,7 @@ interface Agent {
   location: string;
   phone_number: string;
   measurements: string;
-  
-  
+  date_joined?: string;
 }
 
 export default function AdminAgents() {
@@ -40,10 +39,9 @@ export default function AdminAgents() {
     location: "",
     phone_number: "",
     measurements: "",
-    
-    
   });
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [errors, setErrors] = useState<{ [key: string]: string | null }>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,12 +71,39 @@ export default function AdminAgents() {
     fetchAgents();
   }, []);
 
+  // Fonction de validation
+  const validateField = (key: string, value: string): string | null => {
+    if (!value.trim()) return `${key} est requis.`; // Vérifie si le champ est vide
+  
+    if (key === "age" && (isNaN(Number(value)) || Number(value) <= 0)) {
+      return "L'âge doit être un nombre valide."; // Vérifie si l'âge est valide
+    }
+  
+    if (key === "phone_number" && !/^[0-9]{10}$/.test(value)) {
+      return "Entrez numero valide "; // Validation pour 10 chiffres
+    }
+  
+    return null; // Aucun problème détecté
+  };
+  
+
+  const validateForm = (): boolean => {
+    const newErrors: { [key: string]: string | null } = {};
+
+    Object.entries(newAgent).forEach(([key, value]) => {
+      if (key !== "password") {
+        const error = validateField(key, value);
+        if (error) newErrors[key] = error;
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.values(newErrors).every((error) => !error);
+  };
+
   // Ajouter un agent
   const addAgent = async () => {
-    if (!newAgent.username || !newAgent.age) {
-      setError("Le nom d'utilisateur et l'âge sont obligatoires.");
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     setError(null);
@@ -108,8 +133,8 @@ export default function AdminAgents() {
         location: "",
         phone_number: "",
         measurements: "",
-        
       });
+      setErrors({});
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erreur inconnue.";
       setError(errorMessage);
@@ -125,10 +150,7 @@ export default function AdminAgents() {
 
   // Mettre à jour un agent
   const updateAgent = async () => {
-    if (!editingAgent || !editingAgent.id) {
-      console.error("Aucun ID valide pour la mise à jour.");
-      return;
-    }
+    if (!editingAgent) return;
 
     setLoading(true);
     setError(null);
@@ -145,17 +167,14 @@ export default function AdminAgents() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || "Erreur lors de la mise à jour.");
+        throw new Error(errorData.message || "Erreur lors de la mise à jour.");
       }
 
       const updatedAgent: Agent = await response.json();
       setAgents(
-        agents.map((agent) =>
-          agent.id === updatedAgent.id ? updatedAgent : agent
-        )
+        agents.map((agent) => (agent.id === updatedAgent.id ? updatedAgent : agent))
       );
       setEditingAgent(null);
-      setError(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erreur inconnue.";
       setError(errorMessage);
@@ -165,9 +184,7 @@ export default function AdminAgents() {
   };
 
   // Annuler les modifications
-  const cancelEdit = () => {
-    setEditingAgent(null);
-  };
+  const cancelEdit = () => setEditingAgent(null);
 
   // Supprimer un agent
   const deleteAgent = async (id: number) => {
@@ -189,109 +206,100 @@ export default function AdminAgents() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-3xl font-semibold text-gray-800">Gestion des Agents</h1>
+      <h1 className="text-3xl font-semibold">Gestion des Agents</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Formulaires */}
-        {Object.entries(newAgent).map(([key, value]) => 
-        key !== "password" && key !== "date_joined" ?(
-          <Input
-            key={key}
-            placeholder={key}
-            value={editingAgent ? editingAgent[key as keyof Agent] : value}
-            onChange={(e) =>
-              editingAgent
-                ? setEditingAgent({
-                    ...editingAgent,
-                    [key]: e.target.value,
-                  })
-                : setNewAgent({ ...newAgent, [key]: e.target.value })
-            }
-          />
-        ) : null
-      )}
+        {Object.entries(newAgent).map(([key, value]) =>
+          key !== "password" ? (
+            <div key={key} className="space-y-1">
+              <Input
+                placeholder={key}
+                value={editingAgent ? editingAgent[key as keyof Agent] : value}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (editingAgent) {
+                    setEditingAgent({ ...editingAgent, [key]: val });
+                  } else {
+                    setNewAgent({ ...newAgent, [key]: val });
+                    setErrors((prev) => ({
+                      ...prev,
+                      [key]: validateField(key, val),
+                    }));
+                  }
+                }}
+                className={errors[key] ? "border-red-500" : ""}
+              />
+              {errors[key] && (
+                <p className="text-red-500 text-sm">{errors[key]}</p>
+              )}
+            </div>
+          ) : null
+        )}
       </div>
 
-      <div className="flex items-center space-x-4 mt-4">
+      <div className="flex items-center space-x-4">
         <Button
           onClick={editingAgent ? updateAgent : addAgent}
           disabled={loading}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4"
+          className="bg-blue-500 text-white"
         >
-          {loading
-            ? editingAgent
-              ? "Mise à jour en cours..."
-              : "Ajout en cours..."
-            : editingAgent
-            ? "Mettre à jour"
-            : "Ajouter"}
+          {loading ? "En cours..." : editingAgent ? "Mettre à jour" : "Ajouter"}
         </Button>
-
         {editingAgent && (
-          <Button onClick={cancelEdit} className="bg-gray-500 hover:bg-gray-600">
+          <Button
+            onClick={cancelEdit}
+            className="bg-gray-500 text-white"
+          >
             Annuler
           </Button>
         )}
       </div>
 
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {error && <p className="text-red-500">{error}</p>}
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-  <Table className="w-full table-auto">
-    <TableHeader>
-      <TableRow>
-        {[
-          "Nom d'utilisateur",
-          "Âge",
-          "Genre",
-          "Localisation",
-          "Téléphone",
-          "Date de Création",
-          "Mot de Passe",
-          "Actions",
-        ].map((header) => (
-          <TableHead key={header} className="px-4 py-2 text-left text-sm font-semibold text-gray-600">
-            {header}
-          </TableHead>
-        ))}
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      {agents.map((agent) => (
-        <TableRow key={agent.id} className="hover:bg-gray-50">
-          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.username}</TableCell>
-          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.age}</TableCell>
-          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.gender}</TableCell>
-          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.location}</TableCell>
-          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.phone_number}</TableCell>
-          <TableCell className="px-4 py-2 text-sm text-gray-700">
-            {new Date(agent.date_joined).toLocaleString("fr-FR")}
-          </TableCell>
-          <TableCell>{agent.password}</TableCell>
-          <TableCell className="px-4 py-2 text-sm">
-            <Button
+      <Table>
+        {/* Table Header */}
+        <TableHeader>
+          <TableRow>
+            {["Nom d'utilisateur", "Âge", "Genre", "Localisation", "Téléphone", "Actions"].map(
+              (header) => (
+                <TableHead key={header}>{header}</TableHead>
+              )
+            )}
+          </TableRow>
+        </TableHeader>
+
+        {/* Table Body */}
+        <TableBody>
+          {agents.map((agent) => (
+            <TableRow key={agent.id}>
+              <TableCell>{agent.username}</TableCell>
+              <TableCell>{agent.age}</TableCell>
+              <TableCell>{agent.gender}</TableCell>
+              <TableCell>{agent.location}</TableCell>
+              <TableCell>{agent.phone_number}</TableCell>
+              <TableCell>
+              <Button
               onClick={() => editAgent(agent)}
-              className="text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-            >
-              <FaEdit />
-              <span>Modifier</span>
-            </Button>
-            <Button
-              onClick={() => deleteAgent(agent.id)}
-              className="text-red-600 hover:text-red-800 flex items-center space-x-1 mt-1"
-            >
-              <FaTrashAlt />
-              <span>Supprimer</span>
-            </Button>
-          </TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  </Table>
-</div>
+              className="text-blue-500 flex items-center space-x-2"
+              >
+                <FaEdit /> {/* Icône Modifier */}
+                <span>Modifier</span>
+              </Button>
 
+              <Button
+                onClick={() => deleteAgent(agent.id)}
+                className="text-red-500 flex items-center space-x-2"
+              >
+                <FaTrashAlt /> {/* Icône Supprimer */}
+                <span>Supprimer</span>
+              </Button>
 
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
