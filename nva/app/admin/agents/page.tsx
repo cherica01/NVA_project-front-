@@ -1,41 +1,59 @@
-"use client"
-import { apiUrl } from "../../../util/config"
-import { getAccessToken} from "../../../util/biscuit"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import React from 'react';
+"use client";
 
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { FaEdit, FaTrashAlt } from "react-icons/fa" // Import des icônes
+import { apiUrl } from "../../../util/config";
+import { getAccessToken } from "../../../util/biscuit";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableHeader,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import { FaEdit, FaTrashAlt } from "react-icons/fa"; // Icônes
+
+// Interface pour définir un agent
+interface Agent {
+  id: number;
+  username: string;
+  password?: string;
+  age: string;
+  gender: string;
+  location: string;
+  phone_number: string;
+  measurements: string;
+  
+  
+}
 
 export default function AdminAgents() {
-  const [agents, setAgents] = useState([])
-  const [newAgent, setNewAgent] = useState({
-    username: '',
-    password: 'defaultpassword',
-    age: '',
-    gender: '',
-    location: '',
-    phone_number: '',
-    measurements: '',
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [editingAgent, setEditingAgent] = useState<any | null>(null)
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [newAgent, setNewAgent] = useState<Omit<Agent, "id">>({
+    username: "",
+    password: "defaultpassword",
+    age: "",
+    gender: "",
+    location: "",
+    phone_number: "",
+    measurements: "",
+    
+    
+  });
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Charger les agents existants
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        // Récupérer le token d'accès
         const accessToken = await getAccessToken();
+        if (!accessToken) throw new Error("Token invalide ou expiré.");
 
-        if (!accessToken) {
-          throw new Error("Token invalide ou expiré. Veuillez vous reconnecter.");
-        }
-
-        // Effectuer la requête avec le token dans les headers
         const response = await fetch(`${apiUrl}/accounts/agents/`, {
           method: "GET",
           headers: {
@@ -43,14 +61,12 @@ export default function AdminAgents() {
           },
         });
 
-        if (!response.ok) {
-          throw new Error("Erreur lors du chargement des agents.");
-        }
-
-        const data = await response.json();
+        if (!response.ok) throw new Error("Erreur lors du chargement des agents.");
+        const data: Agent[] = await response.json();
         setAgents(data);
       } catch (err) {
-        setError(err.message);
+        const errorMessage = err instanceof Error ? err.message : "Erreur inconnue.";
+        setError(errorMessage);
       }
     };
 
@@ -60,238 +76,222 @@ export default function AdminAgents() {
   // Ajouter un agent
   const addAgent = async () => {
     if (!newAgent.username || !newAgent.age) {
-      setError("Le nom d'utilisateur et l'âge sont obligatoires.")
-      return
+      setError("Le nom d'utilisateur et l'âge sont obligatoires.");
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch(`${apiUrl}/accounts/add-agent/`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${await getAccessToken()}`,
         },
         body: JSON.stringify(newAgent),
-      })
+      });
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Erreur lors de l’ajout de l’agent.')
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erreur lors de l’ajout de l’agent.");
       }
 
-      const result = await response.json()
-      setAgents([...agents, result])
+      const result: Agent = await response.json();
+      setAgents([...agents, result]);
       setNewAgent({
-        username: '',
-        password: 'defaultpassword',
-        age: '',
-        gender: '',
-        location: '',
-        phone_number: '',
-        measurements: '',
-      })
-    } catch (err: any) {
-      setError(err.message)
+        username: "",
+        password: "defaultpassword",
+        age: "",
+        gender: "",
+        location: "",
+        phone_number: "",
+        measurements: "",
+        
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erreur inconnue.";
+      setError(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Modifier un agent
-  const editAgent = (agent: any) => {
-    setEditingAgent(agent)
-  }
+  const editAgent = (agent: Agent) => {
+    setEditingAgent(agent);
+  };
 
   // Mettre à jour un agent
   const updateAgent = async () => {
     if (!editingAgent || !editingAgent.id) {
-      console.error('Aucun ID valide pour la mise à jour.')
-      return
+      console.error("Aucun ID valide pour la mise à jour.");
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch(`${apiUrl}/accounts/${editingAgent.id}/update/`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${await getAccessToken()}`,
-         
         },
         body: JSON.stringify(editingAgent),
-      })
+      });
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || 'Erreur lors de la mise à jour.')
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Erreur lors de la mise à jour.");
       }
 
-      const updatedAgent = await response.json()
-      setAgents(agents.map((agent) => (agent.id === updatedAgent.id ? updatedAgent : agent)))
-      setEditingAgent(null)
-      setError(null)
-    } catch (err: any) {
-      setError(err.message)
+      const updatedAgent: Agent = await response.json();
+      setAgents(
+        agents.map((agent) =>
+          agent.id === updatedAgent.id ? updatedAgent : agent
+        )
+      );
+      setEditingAgent(null);
+      setError(null);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erreur inconnue.";
+      setError(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Annuler les modifications
   const cancelEdit = () => {
-    setEditingAgent(null) // Réinitialiser l'agent en cours d'édition
-  }
+    setEditingAgent(null);
+  };
 
   // Supprimer un agent
   const deleteAgent = async (id: number) => {
     try {
       const response = await fetch(`${apiUrl}/accounts/${id}/delete/`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${await getAccessToken()}`,
-         
         },
-      })
+      });
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la suppression de l’agent.')
-      }
-
-      setAgents(agents.filter((agent) => agent.id !== id))
-    } catch (err: any) {
-      setError(err.message)
+      if (!response.ok) throw new Error("Erreur lors de la suppression de l'agent.");
+      setAgents(agents.filter((agent) => agent.id !== id));
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erreur inconnue.";
+      setError(errorMessage);
     }
-  }
+  };
 
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-3xl font-semibold text-gray-800">Gestion des Agents</h1>
 
-      {/* Formulaire pour ajouter ou modifier un agent */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Input
-          placeholder="Nom d'utilisateur"
-          value={editingAgent ? editingAgent.username : newAgent.username}
-          onChange={(e) => editingAgent
-            ? setEditingAgent({ ...editingAgent, username: e.target.value })
-            : setNewAgent({ ...newAgent, username: e.target.value })}
-          className="input input-bordered w-full"
-        />
-        <Input
-          placeholder="Âge"
-          type="number"
-          value={editingAgent ? editingAgent.age : newAgent.age}
-          onChange={(e) => editingAgent
-            ? setEditingAgent({ ...editingAgent, age: e.target.value })
-            : setNewAgent({ ...newAgent, age: e.target.value })}
-          className="input input-bordered w-full"
-        />
-        <Input
-          placeholder="Genre"
-          value={editingAgent ? editingAgent.gender : newAgent.gender}
-          onChange={(e) => editingAgent
-            ? setEditingAgent({ ...editingAgent, gender: e.target.value })
-            : setNewAgent({ ...newAgent, gender: e.target.value })}
-          className="input input-bordered w-full"
-        />
-        <Input
-          placeholder="Localisation"
-          value={editingAgent ? editingAgent.location : newAgent.location}
-          onChange={(e) => editingAgent
-            ? setEditingAgent({ ...editingAgent, location: e.target.value })
-            : setNewAgent({ ...newAgent, location: e.target.value })}
-          className="input input-bordered w-full"
-        />
-        <Input
-          placeholder="Téléphone"
-          value={editingAgent ? editingAgent.phone_number : newAgent.phone_number}
-          onChange={(e) => editingAgent
-            ? setEditingAgent({ ...editingAgent, phone_number: e.target.value })
-            : setNewAgent({ ...newAgent, phone_number: e.target.value })}
-          className="input input-bordered w-full"
-        />
-        <Input
-          placeholder="Mensurations"
-          value={editingAgent ? editingAgent.measurements : newAgent.measurements}
-          onChange={(e) => editingAgent
-            ? setEditingAgent({ ...editingAgent, measurements: e.target.value })
-            : setNewAgent({ ...newAgent, measurements: e.target.value })}
-          className="input input-bordered w-full"
-        />
+        {/* Formulaires */}
+        {Object.entries(newAgent).map(([key, value]) => 
+        key !== "password" && key !== "date_joined" ?(
+          <Input
+            key={key}
+            placeholder={key}
+            value={editingAgent ? editingAgent[key as keyof Agent] : value}
+            onChange={(e) =>
+              editingAgent
+                ? setEditingAgent({
+                    ...editingAgent,
+                    [key]: e.target.value,
+                  })
+                : setNewAgent({ ...newAgent, [key]: e.target.value })
+            }
+          />
+        ) : null
+      )}
       </div>
 
       <div className="flex items-center space-x-4 mt-4">
         <Button
           onClick={editingAgent ? updateAgent : addAgent}
           disabled={loading}
-          className="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded shadow-md"
+          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4"
         >
           {loading
-            ? (editingAgent ? 'Mise à jour en cours...' : 'Ajout en cours...')
-            : (editingAgent ? 'Mettre à jour l’agent' : 'Ajouter un agent')}
+            ? editingAgent
+              ? "Mise à jour en cours..."
+              : "Ajout en cours..."
+            : editingAgent
+            ? "Mettre à jour"
+            : "Ajouter"}
         </Button>
 
         {editingAgent && (
-          <Button
-            onClick={cancelEdit}
-            className="w-full md:w-auto bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded shadow-md"
-          >
+          <Button onClick={cancelEdit} className="bg-gray-500 hover:bg-gray-600">
             Annuler
           </Button>
         )}
       </div>
 
-      {error && <p className="text-red-500 text-center mt-2">{error}</p>}
-      <h1 className="text-3xl font-semibold text-gray-800">LISTE DES AGENTS</h1>
-      <Table className="mt-6 border border-gray-300 rounded-lg shadow-md overflow-hidden">
-       
-        <TableHeader>
-        
-          <TableRow className="bg-gray-100">
-            
-            <TableHead className="px-4 py-3 text-left">Nom d'utilisateur</TableHead>
-            <TableHead className="px-4 py-3 text-left">Âge</TableHead>
-            <TableHead className="px-4 py-3 text-left">Genre</TableHead>
-            <TableHead className="px-4 py-3 text-left">Localisation</TableHead>
-            <TableHead className="px-4 py-3 text-left">Téléphone</TableHead>
-            <TableHead className="px-4 py-3 text-left">Mensurations</TableHead>
-            <TableHead className="px-4 py-3 text-left">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {agents.map((agent: any) => (
-            <TableRow key={agent.id} className="border-b hover:bg-gray-50">
-              <TableCell className="px-4 py-2">{agent.username}</TableCell>
-              <TableCell className="px-4 py-2">{agent.age}</TableCell>
-              <TableCell className="px-4 py-2">{agent.gender}</TableCell>
-              <TableCell className="px-4 py-2">{agent.location}</TableCell>
-              <TableCell className="px-4 py-2">{agent.phone_number}</TableCell>
-              <TableCell className="px-4 py-2">{agent.measurements}</TableCell>
-              <TableCell className="px-4 py-2">
-              <Button
-                  onClick={() => editAgent(agent)}
-                  className="btn btn-primary mr-2 text-blue-500 hover:text-blue-700"
-                >
-                  <FaEdit className="mr-1" /> Modifier
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => deleteAgent(agent.id)}
-                  className="btn btn-danger text-red-500 hover:text-red-700"
-                >
-                  <FaTrashAlt className="mr-1" /> Supprimer
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {error && <p className="text-red-500 text-center">{error}</p>}
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+  <Table className="w-full table-auto">
+    <TableHeader>
+      <TableRow>
+        {[
+          "Nom d'utilisateur",
+          "Âge",
+          "Genre",
+          "Localisation",
+          "Téléphone",
+          "Date de Création",
+          "Mot de Passe",
+          "Actions",
+        ].map((header) => (
+          <TableHead key={header} className="px-4 py-2 text-left text-sm font-semibold text-gray-600">
+            {header}
+          </TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {agents.map((agent) => (
+        <TableRow key={agent.id} className="hover:bg-gray-50">
+          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.username}</TableCell>
+          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.age}</TableCell>
+          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.gender}</TableCell>
+          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.location}</TableCell>
+          <TableCell className="px-4 py-2 text-sm text-gray-700">{agent.phone_number}</TableCell>
+          <TableCell className="px-4 py-2 text-sm text-gray-700">
+            {new Date(agent.date_joined).toLocaleString("fr-FR")}
+          </TableCell>
+          <TableCell>{agent.password}</TableCell>
+          <TableCell className="px-4 py-2 text-sm">
+            <Button
+              onClick={() => editAgent(agent)}
+              className="text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+            >
+              <FaEdit />
+              <span>Modifier</span>
+            </Button>
+            <Button
+              onClick={() => deleteAgent(agent.id)}
+              className="text-red-600 hover:text-red-800 flex items-center space-x-1 mt-1"
+            >
+              <FaTrashAlt />
+              <span>Supprimer</span>
+            </Button>
+          </TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+</div>
+
+
     </div>
-  )
+  );
 }

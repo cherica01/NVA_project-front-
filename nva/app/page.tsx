@@ -1,9 +1,9 @@
 "use client";
+
 import { apiUrl } from "../util/config";
 import { setCookies } from "../util/biscuit";
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // Importez useRouter
-
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -11,9 +11,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const router = useRouter(); // Initialisez le router
+  const router = useRouter();
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -25,19 +25,19 @@ export default function Login() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           username,
           password,
         }),
       });
 
       const data = await response.json();
-      console.log(data) ; 
+      console.log(data);
 
       if (response.ok) {
         setSuccess("Connexion réussie !");
         setCookies(data);
-     
+
         // Redirection après connexion réussie
         router.push("/admin/agents");
       } else {
@@ -63,7 +63,9 @@ export default function Login() {
               type="text"
               id="username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setUsername(e.target.value)
+              }
               className="w-full mt-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
               placeholder="Entrez votre nom d'utilisateur"
               required
@@ -77,7 +79,9 @@ export default function Login() {
               type="password"
               id="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPassword(e.target.value)
+              }
               className="w-full mt-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
               placeholder="Entrez votre mot de passe"
               required
