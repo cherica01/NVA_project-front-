@@ -1,4 +1,5 @@
-import Cookies from "js-cookie"; 
+import Cookies from "js-cookie";
+
 export const getAccessToken = async () => {
     const accessToken = Cookies.get("access_token");
     const refreshToken = Cookies.get("refresh_token");
@@ -11,7 +12,7 @@ export const getAccessToken = async () => {
     if (refreshToken) {
       // Si l'access_token n'existe pas, essayer d'utiliser le refresh_token
       try {
-        const response = await fetch(`${apiUrl}/accounts/refresh/`, {
+        const response = await fetch(`${apiUrl}/token/refresh/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

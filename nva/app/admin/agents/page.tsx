@@ -203,7 +203,50 @@ export default function AdminAgents() {
       setError(errorMessage);
     }
   };
-
+  const regeneratePassword = async (id:Number) => {
+    try {
+      const token = await getAccessToken(); // Vérifie que le token est valide
+  
+      const response = await fetch(`${apiUrl}/accounts/regenerate-password/${id}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      // Lire la réponse brute pour faciliter le débogage
+      const text = await response.text();
+      console.log("Réponse brute du serveur :", text);
+  
+      // Vérifier si la réponse est au format JSON
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch (parseError) {
+        throw new Error(`Réponse du serveur non valide : ${text}`);
+      }
+  
+      // Gestion des erreurs côté serveur
+      if (!response.ok) {
+        throw new Error(result.error || "Erreur lors de la régénération du mot de passe.");
+      }
+  
+      // Mise à jour de la liste des agents avec le nouveau mot de passe
+      setAgents((prevAgents) =>
+        prevAgents.map((agent) =>
+          agent.id === id ? { ...agent, password: result.password } : agent
+        )
+      );
+  
+      alert("✅ Mot de passe régénéré avec succès : " + result.password);
+    } catch (error) {
+      console.error("Erreur front-end :", error);
+      const errorMessage = error instanceof Error ? error.message : "❌ Échec de la régénération du mot de passe.";
+      alert(errorMessage);
+    }
+  };
+  
   const GENDER_CHOICES = [
     { value: "Male", label: "Male" },
     { value: "Female", label: "Female" },
@@ -405,7 +448,15 @@ export default function AdminAgents() {
       {agent.password} <span className="text-xs text-gray-500">(Temporaire)</span>
     </span>
   ) : (
-    <span className="text-xs text-gray-400">Non disponible</span>
+    <div>
+      <span className="text-xs text-gray-400">Non disponible</span>
+      <button
+        onClick={() => regeneratePassword(agent.id)}
+        className="ml-2 text-blue-500 hover:underline text-xs"
+      >
+        Régénérer
+      </button>
+    </div>
   )}
 </TableCell>
 
