@@ -214,7 +214,7 @@ export default function AdminAgents() {
   ]
 
   return (
-    <div className="p-6 space-y-8 bg-gradient-to-br from-orange-50 to-red-100 dark:from-gray-900 dark:to-gray-800 min-h-screen">
+    <div className="p-6 space-y-8 bg-gray-200 min-h-screen">
       <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg">
         <CardHeader className="bg-orange-800 text-white dark:bg-orange-950">
           <CardTitle className="text-3xl font-bold">Gestion des Agents</CardTitle>
@@ -386,7 +386,7 @@ export default function AdminAgents() {
       </Card>
 
       <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg overflow-hidden">
-        <CardHeader className="bg-orange-800 text-white dark:bg-orange-950">
+      <CardHeader className="bg-green-800 text-white dark:bg-green-950">
           <CardTitle className="text-3xl font-bold">Liste des Agents</CardTitle>
         </CardHeader>
         <CardContent>
