@@ -1,84 +1,63 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { Users, Calendar, CreditCard, ClipboardCheck, LogOut, X, Menu } from "lucide-react";
-import { useState, useEffect, ReactNode } from "react";
+import { useState } from "react"
+import {
+  Bell,
+  Calendar,
+  CreditCard,
+  Home,
+  MessageSquare,
+  Users,
+  Menu,
+  X,
+} from "lucide-react"
+import Link from "next/link"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
-interface NavItemProps {
-  href: string;
-  icon: ReactNode;
-  children: ReactNode;
-}
-
-const NavItem: React.FC<NavItemProps> = ({ href, icon, children }) => (
-  <li>
-    <Link
-      href={href}
-      className="flex items-center space-x-3 p-2 rounded-lg hover:bg-green-100 transition-colors duration-200"
-    >
-      <span className="text-green-600">{icon}</span>
-      <span>{children}</span>
-    </Link>
-  </li>
-);
-
-const AdminNavbar = () => {
-  const [isOpen, setIsOpen] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("navbarOpen") !== "false";
-    }
-    return true;
-  });
-
-  useEffect(() => {
-    localStorage.setItem("navbarOpen", isOpen.toString());
-  }, [isOpen]);
+export default function AdminNavbar() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <>
-      {/* Bouton flottant pour réouvrir */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed left-2 top-2 p-2 bg-white rounded-full shadow-lg z-50"
-        >
-          <Menu className="w-6 h-6 text-green-600" />
-        </button>
+
+    <><button className="fixed top-4 left-4 z-50 lg:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
+      {sidebarOpen ? (
+        <X className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+      ) : (
+        <Menu className="h-6 w-6 text-gray-600 dark:text-gray-300" />
       )}
-
-      <nav
-        className={`bg-white text-black h-screen w-64 fixed left-0 top-0 shadow-lg transform transition-transform duration-300 z-40 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="p-4 relative">
-          <button
-            onClick={() => setIsOpen(false)}
-            className="absolute -right-8 top-4 p-2 hover:bg-gray-100 rounded-full"
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
-
-          <h1 className="text-2xl font-bold text-green-600 mb-8">Admin Panel</h1>
-          <ul className="space-y-4">
-            <NavItem href="/admin/agents" icon={<Users className="w-5 h-5" />}>
-              Gestion Agents
-            </NavItem>
-            <NavItem href="/admin/evenements" icon={<Calendar className="w-5 h-5" />}>
-              Gestions événements
-            </NavItem>
-            <NavItem href="/admin/paie" icon={<CreditCard className="w-5 h-5" />}>
-              Gestions de paiement
-            </NavItem>
-            <NavItem href="/admin/presences" icon={<ClipboardCheck className="w-5 h-5" />}>
-              Gestions de Présence
-            </NavItem>
-          </ul>
+    </button><div
+        className={`fixed inset-0 z-40 transition-opacity bg-black bg-opacity-50 lg:hidden ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={() => setSidebarOpen(false)} /><div
+          className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 backdrop-blur-lg bg-white/90 dark:bg-gray-900/90 border-r border-gray-200 dark:border-gray-800`}
+        >
+        <div className="p-6">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            NVA Dashboard
+          </h1>
         </div>
-       
-      </nav>
-    </>
-  );
-};
+        <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
+          <nav className="space-y-2 p-4">
+            {[
+              { icon: Users, label: "Gestion RH", href: "/admin/employees" },
+              { icon: Calendar, label: "Événements", href: "/admin/events" },
+              { icon: CreditCard, label: "Paiements", href: "/admin/payments" },
+              { icon: Home, label: "Présence", href: "/admin/presence" },
+              { icon: MessageSquare, label: "Messages", href: "/admin/messages" },
+              { icon: Bell, label: "Notifications", href: "/admin/notifications" },
+            ].map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all hover:bg-orange-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </ScrollArea>
+      </div></>
 
-export default AdminNavbar;
+      
+  )
+}

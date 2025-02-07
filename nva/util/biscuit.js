@@ -48,7 +48,7 @@ export const getAccessToken = async () => {
     Cookies.set("access_token", data.access_token, {
       secure: true,
       httpOnly: false,
-      expires: 1 / 288, // 5 minutes
+      expires: 1 , // 5 minutes
     });
   
     // Définir la durée de vie du refresh_token à 1 journée

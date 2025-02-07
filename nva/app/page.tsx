@@ -19,41 +19,57 @@ export default function Login() {
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
-    setSuccess("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
 
     try {
-      const response = await fetch(`${apiUrl}/accounts/login/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      })
+        const response = await fetch(`${apiUrl}/accounts/login/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                username,
+                password,
+            }),
+        });
 
-      const data = await response.json()
-      console.log(data)
+        const data = await response.json();
+        console.log("Données reçues:", data);
 
-      if (response.ok) {
-        setSuccess("Connexion réussie !")
-        setCookies(data)
+        if (response.ok) {
+            setSuccess("Connexion réussie !");
+            setCookies(data);
 
-        // Redirection après connexion réussie
-        router.push("/admin/agents")
-      } else {
-        setError(data.message || "Erreur lors de la connexion.")
-      }
+            // Vérifie que `user` existe avant d'accéder à `is_superuser`
+            if (data.user && typeof data.user.is_superuser !== "undefined") {
+              const isSuperuser = data.user.is_superuser ? 1 : 0; 
+
+                if (isSuperuser === 1) {
+                    router.push("/admin/agents");
+                } else if (isSuperuser === 0) {
+                    router.push("/agent/agenda");
+                } else {
+                    console.error("Rôle inconnu:", isSuperuser);
+                    setError("Rôle inconnu. Contactez l'administrateur.");
+                }
+            } else {
+                console.error("Données utilisateur incorrectes:", data);
+                setError("Impossible de récupérer le rôle utilisateur.");
+            }
+        } else {
+            setError(data.detail || "Erreur lors de la connexion.");
+        }
     } catch (err) {
-      setError("Une erreur est survenue. Veuillez réessayer.")
+        setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
-      setLoading(false)
+        setLoading(false);
     }
-  }
+};
+
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-green-900 to-black">
@@ -128,4 +144,3 @@ export default function Login() {
     </div>
   )
 }
-
