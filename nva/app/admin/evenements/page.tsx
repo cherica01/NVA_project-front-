@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { CalendarIcon, MapPin, Briefcase, Hash, Users } from "lucide-react"
+import { CalendarIcon, MapPin, Briefcase, Hash, Users, Pencil, Trash2 } from "lucide-react"
 import { Table, TableBody, TableHeader, TableHead, TableRow, TableCell } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, isValid } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { apiUrl } from "../../../util/config"
-import { getAccessToken } from "../../../util/biscuit"
+import { apiUrl } from "@/util/config"
+import { getAccessToken } from "@/util/biscuit"
 
 interface Agent {
   id: number
@@ -45,6 +45,8 @@ export default function EventManagement() {
   const [errors, setErrors] = useState<{ [key: string]: string | null }>({})
   const [loading, setLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [editingEventId, setEditingEventId] = useState<number | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
 
   useEffect(() => {
     fetchEvents()
@@ -124,15 +126,19 @@ export default function EventManagement() {
     return !hasErrors
   }
 
-  const addEvent = async () => {
+  const addOrUpdateEvent = async () => {
     if (!validateForm()) return
     setLoading(true)
     setFormError(null)
     try {
       const accessToken = await getAccessToken()
       console.log("📤 Données envoyées :", JSON.stringify(newEvent, null, 2))
-      const response = await fetch(`${apiUrl}/management/create-event/`, {
-        method: "POST",
+      const url = editingEventId
+        ? `${apiUrl}/management/update-event/${editingEventId}/`
+        : `${apiUrl}/management/create-event/`
+      const method = editingEventId ? "PUT" : "POST"
+      const response = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
@@ -141,20 +147,17 @@ export default function EventManagement() {
       })
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || "Erreur lors de l'ajout de l'événement.")
+        throw new Error(
+          errorData.message || `Erreur lors de ${editingEventId ? "la modification" : "l'ajout"} de l'événement.`,
+        )
       }
       const result: Event = await response.json()
-      setEvents([...events, result])
-      setNewEvent({
-        location: "",
-        company_name: "",
-        event_code: "",
-        start_date: "",
-        end_date: "",
-        agents: [],
-      })
-      setErrors({})
-      setFormError(null)
+      if (editingEventId) {
+        setEvents(events.map((event) => (event.id === editingEventId ? result : event)))
+      } else {
+        setEvents([...events, result])
+      }
+      resetForm()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erreur inconnue."
       setFormError(errorMessage)
@@ -163,14 +166,59 @@ export default function EventManagement() {
     }
   }
 
+  const deleteEvent = async (id: number) => {
+    try {
+      const accessToken = await getAccessToken()
+      const response = await fetch(`${apiUrl}/management/delete-event/${id}/`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      if (!response.ok) throw new Error("Erreur lors de la suppression de l'événement.")
+      setEvents(events.filter((event) => event.id !== id))
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erreur inconnue."
+      setFormError(errorMessage)
+    }
+  }
+
+  const startEditing = (event: Event) => {
+    setEditingEventId(event.id)
+    setNewEvent({
+      location: event.location,
+      company_name: event.company_name,
+      event_code: event.event_code,
+      start_date: event.start_date,
+      end_date: event.end_date,
+      agents: event.agents,
+    })
+    fetchAvailableAgents(event.start_date, event.end_date)
+    setIsEditing(true)
+  }
+
+  const resetForm = () => {
+    setNewEvent({
+      location: "",
+      company_name: "",
+      event_code: "",
+      start_date: "",
+      end_date: "",
+      agents: [],
+    })
+    setErrors({})
+    setFormError(null)
+    setEditingEventId(null)
+    setIsEditing(false)
+  }
+
   return (
-<div className="p-6 space-y-8 bg-gray-200 min-h-screen">
-
-
-
+    <div className="p-6 space-y-8 bg-gray-200 min-h-screen">
       <Card className="backdrop-blur-lg bg-white/10 dark:bg-green-950/30 border-none shadow-lg">
         <CardHeader className="bg-green-800 text-white dark:bg-green-950">
-          <CardTitle className="text-3xl font-bold">Gestion des Événements</CardTitle>
+          <CardTitle className="text-3xl font-bold">
+            {isEditing ? "Modifier l'Événement" : "Gestion des Événements"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="mt-6">
           {formError && (
@@ -345,7 +393,7 @@ export default function EventManagement() {
                 <Users className="text-green-500" />
                 <Select
                   onValueChange={(value) => {
-                    const agentId = Number(value) // Transformation explicite en number
+                    const agentId = Number(value)
                     const updatedAgents = newEvent.agents.includes(agentId)
                       ? newEvent.agents
                       : [...newEvent.agents, agentId]
@@ -367,7 +415,6 @@ export default function EventManagement() {
                 </Select>
               </div>
               {errors.agents && <p className="text-red-500 text-sm mt-1">{errors.agents}</p>}
-              {/* Affichage des agents sélectionnés */}
               <div className="mt-2">
                 Agents sélectionnés :{" "}
                 {newEvent.agents
@@ -381,9 +428,18 @@ export default function EventManagement() {
           </div>
 
           <div className="flex items-center space-x-4 mt-6">
-            <Button onClick={addEvent} disabled={loading} className="bg-green-600 hover:bg-green-700 text-white">
-              {loading ? "En cours..." : "Ajouter l'événement"}
+            <Button
+              onClick={addOrUpdateEvent}
+              disabled={loading}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {loading ? "En cours..." : isEditing ? "Modifier l'événement" : "Ajouter l'événement"}
             </Button>
+            {isEditing && (
+              <Button onClick={resetForm} className="bg-gray-500 hover:bg-gray-600 text-white">
+                Annuler la modification
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -397,11 +453,13 @@ export default function EventManagement() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-green-100 dark:bg-green-900">
-                  {["Localisation", "Entreprise", "Code", "Date de début", "Date de fin", "Agents"].map((header) => (
-                    <TableHead key={header} className="text-green-700 dark:text-green-300 font-semibold">
-                      {header}
-                    </TableHead>
-                  ))}
+                  {["Localisation", "Entreprise", "Code", "Date de début", "Date de fin", "Agents", "Actions"].map(
+                    (header) => (
+                      <TableHead key={header} className="text-green-700 dark:text-green-300 font-semibold">
+                        {header}
+                      </TableHead>
+                    ),
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -418,7 +476,7 @@ export default function EventManagement() {
                           const agent = availableAgents.find((a) => a.id === agentId)
                           return (
                             <Badge
-                              key={agentId} // Utilisation de l'id de l'agent comme clé unique
+                              key={agentId}
                               className="m-1 bg-green-300 text-green-900 dark:bg-green-700 dark:text-white"
                             >
                               {agent ? agent.username : "Agent inconnu"}
@@ -430,6 +488,24 @@ export default function EventManagement() {
                           Aucun agent assigné
                         </Badge>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => startEditing(event)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white"
+                          size="sm"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={() => deleteEvent(event.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                          size="sm"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

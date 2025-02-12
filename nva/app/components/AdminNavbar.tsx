@@ -39,12 +39,12 @@ export default function AdminNavbar() {
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
           <nav className="space-y-2 p-4">
             {[
-              { icon: Users, label: "Gestion RH", href: "/admin/employees" },
-              { icon: Calendar, label: "Événements", href: "/admin/events" },
-              { icon: CreditCard, label: "Paiements", href: "/admin/payments" },
+              { icon: Users, label: "Gestion RH", href: "/admin/agents" },
+              { icon: Calendar, label: "Événements", href: "/admin/evenements" },
+              { icon: CreditCard, label: "Paiements", href: "/admin/paie" },
               { icon: Home, label: "Présence", href: "/admin/presence" },
-              { icon: MessageSquare, label: "Messages", href: "/admin/messages" },
-              { icon: Bell, label: "Notifications", href: "/admin/notifications" },
+              { icon: MessageSquare, label: "Messages", href: "/admin/message" },
+              { icon: Bell, label: "Notifications", href: "/admin/notification" },
             ].map((item) => (
               <Link
                 key={item.label}
