@@ -10,6 +10,7 @@ import {
   Users,
   Menu,
   X,
+  LayoutDashboard
 } from "lucide-react"
 import Link from "next/link"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -39,10 +40,11 @@ export default function AdminNavbar() {
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
           <nav className="space-y-2 p-4">
             {[
+              { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
               { icon: Users, label: "Gestion RH", href: "/admin/agents" },
               { icon: Calendar, label: "Événements", href: "/admin/evenements" },
               { icon: CreditCard, label: "Paiements", href: "/admin/paie" },
-              { icon: Home, label: "Présence", href: "/admin/presence" },
+              { icon: Home, label: "Présences", href: "/admin/presences" },
               { icon: MessageSquare, label: "Messages", href: "/admin/message" },
               { icon: Bell, label: "Notifications", href: "/admin/notification" },
             ].map((item) => (

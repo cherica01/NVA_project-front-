@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -9,8 +9,6 @@ import { Check, X, MapPin, Camera } from "lucide-react"
 import Image from "next/image"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { apiUrl } from "@/util/config"
-import { getAccessToken } from "@/util/biscuit"
 
 interface PresenceRecord {
   id: number
@@ -24,67 +22,42 @@ interface PresenceRecord {
   status: "pending" | "approved" | "rejected"
 }
 
+// Données factices pour la démonstration
+const mockPresenceRecords: PresenceRecord[] = [
+  {
+    id: 1,
+    agent: "Jean Dupont",
+    photo_url: "https://picsum.photos/200",
+    location: { latitude: 48.8566, longitude: 2.3522 },
+    timestamp: "2023-06-15T09:30:00Z",
+    status: "pending",
+  },
+  {
+    id: 2,
+    agent: "Marie Martin",
+    photo_url: "https://picsum.photos/201",
+    location: { latitude: 45.764, longitude: 4.8357 },
+    timestamp: "2023-06-15T10:15:00Z",
+    status: "approved",
+  },
+  {
+    id: 3,
+    agent: "Pierre Durand",
+    photo_url: "https://picsum.photos/202",
+    location: { latitude: 43.2965, longitude: 5.3698 },
+    timestamp: "2023-06-15T08:45:00Z",
+    status: "rejected",
+  },
+]
+
 export default function PresenceManagement() {
-  const [presenceRecords, setPresenceRecords] = useState<PresenceRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [presenceRecords, setPresenceRecords] = useState<PresenceRecord[]>(mockPresenceRecords)
 
-  useEffect(() => {
-    fetchPresenceRecords()
-  }, [])
-
-  const fetchPresenceRecords = async () => {
-    try {
-      setLoading(true)
-      const accessToken = await getAccessToken()
-      if (!accessToken) throw new Error("Token invalide ou expiré.")
-
-      const response = await fetch(`${apiUrl}/admin/presence-records/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-
-      if (!response.ok) throw new Error("Erreur lors du chargement des enregistrements de présence.")
-      const data: PresenceRecord[] = await response.json()
-      setPresenceRecords(data)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erreur inconnue."
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
+  const updatePresenceStatus = (id: number, status: "approved" | "rejected") => {
+    setPresenceRecords((prevRecords) =>
+      prevRecords.map((record) => (record.id === id ? { ...record, status } : record)),
+    )
   }
-
-  const updatePresenceStatus = async (id: number, status: "approved" | "rejected") => {
-    try {
-      const accessToken = await getAccessToken()
-      if (!accessToken) throw new Error("Token invalide ou expiré.")
-
-      const response = await fetch(`${apiUrl}/admin/presence-records/${id}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ status }),
-      })
-
-      if (!response.ok) throw new Error("Erreur lors de la mise à jour du statut de présence.")
-
-      // Mise à jour locale de l'état
-      setPresenceRecords((prevRecords) =>
-        prevRecords.map((record) => (record.id === id ? { ...record, status } : record)),
-      )
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erreur inconnue."
-      setError(errorMessage)
-    }
-  }
-
-  if (loading) return <div className="text-center p-4">Chargement des enregistrements de présence...</div>
-  if (error) return <div className="text-center p-4 text-red-500">{error}</div>
 
   return (
     <div className="p-6 space-y-8 bg-gray-200 min-h-screen">

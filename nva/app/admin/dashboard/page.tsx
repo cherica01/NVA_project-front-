@@ -1,22 +1,6 @@
 "use client"
-
-import { useState } from "react"
-import {
-  Bell,
-  Calendar,
-  CreditCard,
-  Home,
-  MessageSquare,
-  Settings,
-  Users,
-  TrendingUp,
-  Activity,
-  ArrowUpCircle,
-  ArrowDownCircle,
-} from "lucide-react"
+import { Calendar, CreditCard, Users, TrendingUp, Activity, ArrowUpCircle, ArrowDownCircle } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
@@ -41,7 +25,7 @@ const paymentHistory = [
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800">
       <div className="flex">
         {/* Main Content */}
         <div className="flex-1 overflow-auto p-4 lg:p-8">
@@ -49,34 +33,34 @@ export default function Dashboard() {
 
           {/* Stats Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">Agents Actifs</CardTitle>
-                <Users className="h-5 w-5 text-orange-500" />
+                <Users className="h-5 w-5 text-green-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-gray-800 dark:text-white">186</div>
-                <p className="text-xs text-orange-500 flex items-center gap-1 mt-1">
+                <p className="text-xs text-green-500 flex items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3" />
                   +12 ce mois
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                   Événements en Cours
                 </CardTitle>
-                <Calendar className="h-5 w-5 text-blue-500" />
+                <Calendar className="h-5 w-5 text-green-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-gray-800 dark:text-white">8</div>
-                <p className="text-xs text-blue-500 flex items-center gap-1 mt-1">3 débutent aujourd'hui</p>
+                <p className="text-xs text-green-500 flex items-center gap-1 mt-1">3 débutent aujourd'hui</p>
               </CardContent>
             </Card>
 
-            <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                   Prochain Paiement
@@ -89,21 +73,21 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">Taux de Présence</CardTitle>
-                <Activity className="h-5 w-5 text-purple-500" />
+                <Activity className="h-5 w-5 text-green-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-gray-800 dark:text-white">95%</div>
-                <p className="text-xs text-purple-500 flex items-center gap-1 mt-1">+3% ce mois</p>
+                <p className="text-xs text-green-500 flex items-center gap-1 mt-1">+3% ce mois</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Charts and Tables Grid */}
           <div className="mt-4 sm:mt-6 grid gap-4 sm:gap-6 lg:grid-cols-2">
-            <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg lg:col-span-2">
+            <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg lg:col-span-2">
               <CardHeader>
                 <CardTitle className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">
                   Historique Global des Paiements des Agents
@@ -121,9 +105,9 @@ export default function Dashboard() {
                       <Line
                         type="monotone"
                         dataKey="amount"
-                        stroke="#f97316"
+                        stroke="#22c55e"
                         strokeWidth={2}
-                        dot={{ fill: "#f97316", strokeWidth: 2 }}
+                        dot={{ fill: "#22c55e", strokeWidth: 2 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -132,7 +116,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Événements en Cours */}
-            <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg">
+            <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
               <CardHeader>
                 <CardTitle className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">
                   Événements en Cours
@@ -196,7 +180,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Historique des Paiements */}
-            <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg">
+            <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
               <CardHeader>
                 <CardTitle className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">
                   Historique des Paiements
@@ -244,3 +228,4 @@ export default function Dashboard() {
     </div>
   )
 }
+
