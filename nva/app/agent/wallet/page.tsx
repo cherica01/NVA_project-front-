@@ -1,63 +1,92 @@
 "use client"
 
 import { useState } from "react"
-import { Wallet, ArrowUpRight, ArrowDownLeft, Calendar } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ArrowUpCircle, ArrowDownCircle, Euro, Calendar } from "lucide-react"
 
-interface Transaction {
-  id: number
-  type: "credit" | "debit"
-  amount: number
-  description: string
-  date: string
-}
-
-const mockTransactions: Transaction[] = [
-  { id: 1, type: "credit", amount: 1500, description: "Paiement pour le shooting photo", date: "2023-06-01" },
-  { id: 2, type: "debit", amount: 200, description: "Frais de déplacement", date: "2023-06-03" },
-  { id: 3, type: "credit", amount: 2000, description: "Campagne publicitaire", date: "2023-06-10" },
-  { id: 4, type: "debit", amount: 150, description: "Achat de matériel", date: "2023-06-15" },
-  { id: 5, type: "credit", amount: 1800, description: "Défilé de mode", date: "2023-06-20" },
+// Données fictives
+const fakeBalance = 1250.75
+const fakeTransactions = [
+  { id: 1, type: "credit", amount: 500, description: "Paiement pour l'événement A", date: "2023-08-15" },
+  { id: 2, type: "debit", amount: 50, description: "Frais de transport", date: "2023-08-14" },
+  { id: 3, type: "credit", amount: 750, description: "Bonus performance", date: "2023-08-10" },
+  { id: 4, type: "debit", amount: 100, description: "Achat équipement", date: "2023-08-05" },
+  { id: 5, type: "credit", amount: 600, description: "Paiement pour l'événement B", date: "2023-08-01" },
 ]
 
-export default function WalletPage() {
-  const [transactions] = useState<Transaction[]>(mockTransactions)
-  const balance = transactions.reduce(
-    (acc, transaction) => (transaction.type === "credit" ? acc + transaction.amount : acc - transaction.amount),
-    0,
-  )
+export default function AgentWallet() {
+  const [balance] = useState(fakeBalance)
+  const [transactions] = useState(fakeTransactions)
+
+  const totalEarnings = transactions.filter((t) => t.type === "credit").reduce((sum, t) => sum + t.amount, 0)
+
+  const totalExpenses = transactions.filter((t) => t.type === "debit").reduce((sum, t) => sum + t.amount, 0)
+
+  const getNextPaymentDate = () => {
+    const today = new Date()
+    const nextPayment = new Date(today.getFullYear(), today.getMonth(), 9)
+    if (today.getDate() > 9) {
+      nextPayment.setMonth(nextPayment.getMonth() + 1)
+    }
+    return nextPayment
+  }
+
+  const nextPaymentDate = getNextPaymentDate()
 
   return (
-    <main className="p-6 space-y-8 bg-white dark:bg-gray-900 min-h-screen">
-      <h1 className="text-4xl font-bold text-green-600 dark:text-green-400 text-center">Portefeuille de l'Agent</h1>
+    <div className="space-y-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Solde actuel</CardTitle>
+            <Euro className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">€{balance.toFixed(2)}</div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Mis à jour aujourd'hui</p>
+          </CardContent>
+        </Card>
+        <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Gains totaux</CardTitle>
+            <ArrowUpCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">€{totalEarnings.toFixed(2)}</div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Ce mois-ci</p>
+          </CardContent>
+        </Card>
+        <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Dépenses totales</CardTitle>
+            <ArrowDownCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">€{totalExpenses.toFixed(2)}</div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Ce mois-ci</p>
+          </CardContent>
+        </Card>
+        <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Prochain paiement</CardTitle>
+            <Calendar className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {nextPaymentDate.toLocaleDateString("fr-FR")}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Chaque 9 du mois</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <Card className="bg-white dark:bg-gray-800 border-green-500">
-        <CardHeader className="bg-green-500 text-white">
-          <CardTitle className="flex items-center justify-between">
-            <span>Solde Actuel</span>
-            <Wallet className="w-6 h-6" />
-          </CardTitle>
+      <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
+        <CardHeader className="bg-green-700 text-white dark:bg-green-900">
+          <CardTitle className="text-2xl font-bold">Historique des Transactions</CardTitle>
         </CardHeader>
-        <CardContent className="pt-6">
-          <p className="text-4xl font-bold text-center text-black dark:text-white">
-            {balance.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-white dark:bg-gray-800 border-green-500">
-        <CardHeader className="bg-green-500 text-white">
-          <CardTitle className="flex items-center justify-between">
-            <span>Historique des Transactions</span>
-            <Button variant="outline" className="bg-white text-green-500 hover:bg-green-100">
-              Exporter
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
@@ -70,30 +99,21 @@ export default function WalletPage() {
             <TableBody>
               {transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <span>{transaction.date}</span>
-                    </div>
-                  </TableCell>
+                  <TableCell>{new Date(transaction.date).toLocaleDateString("fr-FR")}</TableCell>
                   <TableCell>{transaction.description}</TableCell>
                   <TableCell>
-                    {transaction.type === "credit" ? (
-                      <Badge variant="outline" className="bg-green-100 text-green-800">
-                        <ArrowDownLeft className="w-4 h-4 mr-1" />
-                        Crédit
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-red-100 text-red-800">
-                        <ArrowUpRight className="w-4 h-4 mr-1" />
-                        Débit
-                      </Badge>
-                    )}
+                    <Badge variant={transaction.type === "credit" ? "default" : "destructive"} className="capitalize">
+                      {transaction.type === "credit" ? (
+                        <ArrowUpCircle className="mr-1 h-3 w-3 inline" />
+                      ) : (
+                        <ArrowDownCircle className="mr-1 h-3 w-3 inline" />
+                      )}
+                      {transaction.type}
+                    </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-medium">
                     <span className={transaction.type === "credit" ? "text-green-600" : "text-red-600"}>
-                      {transaction.type === "credit" ? "+" : "-"}
-                      {transaction.amount.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                      {transaction.type === "credit" ? "+" : "-"}€{transaction.amount.toFixed(2)}
                     </span>
                   </TableCell>
                 </TableRow>
@@ -102,7 +122,7 @@ export default function WalletPage() {
           </Table>
         </CardContent>
       </Card>
-    </main>
+    </div>
   )
 }
 

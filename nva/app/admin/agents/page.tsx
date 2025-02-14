@@ -1,7 +1,7 @@
 "use client"
 
-import { apiUrl } from "../../../util/config"
-import { getAccessToken } from "../../../util/biscuit"
+import { apiUrl } from "@/util/config"
+import { getAccessToken } from "@/util/biscuit"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -215,8 +215,8 @@ export default function AdminAgents() {
 
   return (
     <div className="p-6 space-y-8 bg-gray-200 min-h-screen">
-      <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg">
-        <CardHeader className="bg-orange-800 text-white dark:bg-orange-950">
+      <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
+        <CardHeader className="bg-green-800 text-white dark:bg-green-950">
           <CardTitle className="text-3xl font-bold">Gestion des Agents</CardTitle>
         </CardHeader>
         <CardContent className="mt-6">
@@ -226,7 +226,7 @@ export default function AdminAgents() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <User className="text-orange-500" />
+                <User className="text-green-500" />
                 <Input
                   placeholder="Nom d'utilisateur"
                   value={editingAgent ? editingAgent.username : newAgent.username}
@@ -242,12 +242,12 @@ export default function AdminAgents() {
                       }))
                     }
                   }}
-                  className={`border-orange-300 focus:ring-orange-500 ${errors.username ? "border-red-500" : ""}`}
+                  className={`border-green-300 focus:ring-green-500 ${errors.username ? "border-red-500" : ""}`}
                 />
                 {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
               </div>
               <div className="flex items-center space-x-2">
-                <Calendar className="text-orange-500" />
+                <Calendar className="text-green-500" />
                 <Input
                   placeholder="Âge"
                   value={editingAgent ? editingAgent.age : newAgent.age}
@@ -263,14 +263,14 @@ export default function AdminAgents() {
                       }))
                     }
                   }}
-                  className={`border-orange-300 focus:ring-orange-500 ${errors.age ? "border-red-500" : ""}`}
+                  className={`border-green-300 focus:ring-green-500 ${errors.age ? "border-red-500" : ""}`}
                 />
                 {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
               </div>
             </div>
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Users className="text-orange-500" />
+                <Users className="text-green-500" />
                 <Select
                   value={editingAgent ? editingAgent.gender : newAgent.gender}
                   onValueChange={(val) => {
@@ -285,7 +285,7 @@ export default function AdminAgents() {
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full border-orange-300 focus:ring-orange-500">
+                  <SelectTrigger className="w-full border-green-300 focus:ring-green-500">
                     <SelectValue placeholder="Genre" />
                   </SelectTrigger>
                   <SelectContent>
@@ -299,7 +299,7 @@ export default function AdminAgents() {
                 {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
               </div>
               <div className="flex items-center space-x-2">
-                <MapPin className="text-orange-500" />
+                <MapPin className="text-green-500" />
                 <Input
                   placeholder="Localisation"
                   value={editingAgent ? editingAgent.location : newAgent.location}
@@ -315,14 +315,14 @@ export default function AdminAgents() {
                       }))
                     }
                   }}
-                  className={`border-orange-300 focus:ring-orange-500 ${errors.location ? "border-red-500" : ""}`}
+                  className={`border-green-300 focus:ring-green-500 ${errors.location ? "border-red-500" : ""}`}
                 />
                 {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
               </div>
             </div>
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Phone className="text-orange-500" />
+                <Phone className="text-green-500" />
                 <Input
                   placeholder="Téléphone"
                   value={editingAgent ? editingAgent.phone_number : newAgent.phone_number}
@@ -338,12 +338,12 @@ export default function AdminAgents() {
                       }))
                     }
                   }}
-                  className={`border-orange-300 focus:ring-orange-500 ${errors.phone_number ? "border-red-500" : ""}`}
+                  className={`border-green-300 focus:ring-green-500 ${errors.phone_number ? "border-red-500" : ""}`}
                 />
                 {errors.phone_number && <p className="text-red-500 text-sm mt-1">{errors.phone_number}</p>}
               </div>
               <div className="flex items-center space-x-2">
-                <Briefcase className="text-orange-500" />
+                <Briefcase className="text-green-500" />
                 <Input
                   placeholder="Mesures"
                   value={editingAgent ? editingAgent.measurements : newAgent.measurements}
@@ -359,7 +359,7 @@ export default function AdminAgents() {
                       }))
                     }
                   }}
-                  className={`border-orange-300 focus:ring-orange-500 ${errors.measurements ? "border-red-500" : ""}`}
+                  className={`border-green-300 focus:ring-green-500 ${errors.measurements ? "border-red-500" : ""}`}
                 />
                 {errors.measurements && <p className="text-red-500 text-sm mt-1">{errors.measurements}</p>}
               </div>
@@ -370,7 +370,7 @@ export default function AdminAgents() {
             <Button
               onClick={editingAgent ? updateAgent : addAgent}
               disabled={loading}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               {loading ? "En cours..." : editingAgent ? "Mettre à jour" : "Ajouter"}
             </Button>
@@ -385,15 +385,15 @@ export default function AdminAgents() {
         </CardContent>
       </Card>
 
-      <Card className="backdrop-blur-lg bg-white/50 dark:bg-gray-800/50 border-none shadow-lg overflow-hidden">
-      <CardHeader className="bg-green-800 text-white dark:bg-green-950">
+      <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg overflow-hidden">
+        <CardHeader className="bg-green-800 text-white dark:bg-green-950">
           <CardTitle className="text-3xl font-bold">Liste des Agents</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-orange-100 dark:bg-orange-900">
+                <TableRow className="bg-green-100 dark:bg-green-900">
                   {[
                     "Nom d'utilisateur",
                     "Mot de passe",
@@ -405,7 +405,7 @@ export default function AdminAgents() {
                     "Mesures",
                     "Actions",
                   ].map((header) => (
-                    <TableHead key={header} className="text-orange-700 dark:text-orange-300 font-semibold">
+                    <TableHead key={header} className="text-green-700 dark:text-green-300 font-semibold">
                       {header}
                     </TableHead>
                   ))}
@@ -413,7 +413,7 @@ export default function AdminAgents() {
               </TableHeader>
               <TableBody>
                 {agents.map((agent) => (
-                  <TableRow key={agent.id} className="hover:bg-orange-50 dark:hover:bg-orange-900/50">
+                  <TableRow key={agent.id} className="hover:bg-green-50 dark:hover:bg-green-900/50">
                     <TableCell className="font-medium">{agent.username}</TableCell>
                     <TableCell>
                       <TooltipProvider>
@@ -463,7 +463,7 @@ export default function AdminAgents() {
                           onClick={() => editAgent(agent)}
                           size="sm"
                           variant="outline"
-                          className="bg-orange-100 text-orange-600 hover:bg-orange-200 dark:bg-orange-800 dark:text-orange-200 dark:hover:bg-orange-700"
+                          className="bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700"
                         >
                           <Edit className="w-4 h-4 mr-1" />
                           Modifier
@@ -484,3 +484,4 @@ export default function AdminAgents() {
     </div>
   )
 }
+

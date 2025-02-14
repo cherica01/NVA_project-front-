@@ -48,7 +48,7 @@ export default function Login() {
               const isSuperuser = data.user.is_superuser ? 1 : 0; 
 
                 if (isSuperuser === 1) {
-                    router.push("/admin/agents");
+                    router.push("/admin/dashboard");
                 } else if (isSuperuser === 0) {
                     router.push("/agent/agenda");
                 } else {
