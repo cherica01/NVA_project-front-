@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, Calendar, CreditCard, Home, MessageSquare, Menu, X, LayoutDashboard } from "lucide-react"
+import { Bell, Calendar, CreditCard, Home, MessageSquare,User , Menu, X, LayoutDashboard } from "lucide-react"
 import Link from "next/link"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -38,12 +38,13 @@ export default function AgentNavbar({ sidebarOpen, setSidebarOpen }: AgentNavbar
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
           <nav className="space-y-2 p-4">
             {[
-              { icon: LayoutDashboard, label: "Dashboard", href: "/agent/dashboard" },
+        
               { icon: Calendar, label: "Agenda", href: "/agent/agenda" },
               { icon: CreditCard, label: "Paiements", href: "/agent/wallet" },
-              { icon: Home, label: "Présences", href: "/agent/presences" },
+              { icon: Home, label: "Présences", href: "/agent/presence" },
               { icon: MessageSquare, label: "Messages", href: "/agent/message" },
               { icon: Bell, label: "Notifications", href: "/agent/notifications" },
+              { icon: User, label: "Profil", href: "/agent/profiles" } 
             ].map((item) => (
               <Link
                 key={item.label}
