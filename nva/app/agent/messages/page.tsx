@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, Paperclip, MoreVertical, Search } from "lucide-react"
+import { Send, Paperclip, MoreVertical, Search, Menu } from "lucide-react"
 import { format } from "date-fns"
 
 interface Contact {
@@ -57,6 +57,7 @@ export default function MessagingPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [showContacts, setShowContacts] = useState(true)
 
   useEffect(() => {
     if (selectedContact) {
@@ -78,7 +79,7 @@ export default function MessagingPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messagesEndRef]) //Corrected dependency
+  }, [messagesEndRef])
 
   const handleSendMessage = () => {
     if (newMessage.trim() && selectedContact) {
@@ -94,9 +95,11 @@ export default function MessagingPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-200">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-200">
       {/* Contacts List */}
-      <div className="w-1/3 bg-white border-r border-gray-300">
+      <div
+        className={`${showContacts ? "flex" : "hidden"} md:flex flex-col md:w-1/3 lg:w-1/4 bg-white border-r border-gray-300`}
+      >
         <div className="p-4 bg-green-800 text-white flex justify-between items-center">
           <Avatar>
             <AvatarImage src="/avatars/user.jpg" alt="Your avatar" />
@@ -118,14 +121,17 @@ export default function MessagingPage() {
             />
           </div>
         </div>
-        <ScrollArea className="h-[calc(100vh-120px)]">
+        <ScrollArea className="flex-grow">
           {contacts.map((contact) => (
             <div
               key={contact.id}
               className={`flex items-center p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-100 ${
                 selectedContact?.id === contact.id ? "bg-gray-200" : ""
               }`}
-              onClick={() => setSelectedContact(contact)}
+              onClick={() => {
+                setSelectedContact(contact)
+                setShowContacts(false)
+              }}
             >
               <Avatar className="h-12 w-12">
                 <AvatarImage src={contact.avatar} alt={contact.name} />
@@ -149,11 +155,19 @@ export default function MessagingPage() {
       </div>
 
       {/* Chat Window */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col ${!showContacts ? "flex" : "hidden md:flex"}`}>
         {selectedContact ? (
           <>
             <div className="p-4 bg-green-800 text-white flex justify-between items-center">
               <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden mr-2"
+                  onClick={() => setShowContacts(!showContacts)}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={selectedContact.avatar} alt={selectedContact.name} />
                   <AvatarFallback>{selectedContact.name.charAt(0)}</AvatarFallback>
@@ -164,7 +178,7 @@ export default function MessagingPage() {
                 <MoreVertical className="h-5 w-5" />
               </Button>
             </div>
-            <ScrollArea className="flex-1 p-4 bg-[#e5ddd5]">
+            <ScrollArea className="flex-grow p-4 bg-[#e5ddd5]">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -199,6 +213,14 @@ export default function MessagingPage() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center bg-gray-100">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden absolute top-4 left-4"
+              onClick={() => setShowContacts(!showContacts)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
             <p className="text-gray-500 text-lg">Sélectionnez une conversation pour commencer</p>
           </div>
         )}
