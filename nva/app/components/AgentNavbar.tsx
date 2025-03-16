@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, Calendar, CreditCard, Home, MessageSquare,User , Menu, X, LayoutDashboard } from "lucide-react"
+import { Bell, Calendar, CreditCard, Home, MessageSquare,User , Menu, X } from "lucide-react"
 import Link from "next/link"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -40,9 +40,9 @@ export default function AgentNavbar({ sidebarOpen, setSidebarOpen }: AgentNavbar
             {[
         
               { icon: Calendar, label: "Agenda", href: "/agent/agenda" },
-              { icon: CreditCard, label: "Paiements", href: "/agent/wallet" },
+              { icon: CreditCard, label: "Wallet", href: "/agent/wallet" },
               { icon: Home, label: "Présences", href: "/agent/presence" },
-              { icon: MessageSquare, label: "Messages", href: "/agent/message" },
+              { icon: MessageSquare, label: "Messages", href: "/agent/messages" },
               { icon: Bell, label: "Notifications", href: "/agent/notifications" },
               { icon: User, label: "Profil", href: "/agent/profiles" } 
             ].map((item) => (
