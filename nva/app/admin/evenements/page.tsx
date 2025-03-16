@@ -50,23 +50,23 @@ export default function EventManagement() {
 
   useEffect(() => {
     fetchEvents()
+    fetchAvailableAgents(new Date().toISOString(), new Date(new Date().setDate(new Date().getDate() + 1)).toISOString())
   }, [])
 
   const fetchEvents = async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) throw new Error("Token invalide ou expiré.")
-
-      const response = await fetch(`${apiUrl}/management/events/`, {
+      const response = await fetch(`${apiUrl}/event/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       })
-
       if (!response.ok) throw new Error("Erreur lors du chargement des événements.")
       const data: Event[] = await response.json()
-      setEvents(data)
+      console.log("Événements récupérés :", data)
+      setEvents(data.filter(event => event.id !== undefined))
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erreur inconnue."
       setFormError(errorMessage)
@@ -74,26 +74,26 @@ export default function EventManagement() {
   }
 
   const fetchAvailableAgents = async (start: string, end: string) => {
+    if (!start || !end || !isValid(new Date(start)) || !isValid(new Date(end))) {
+      console.error("Dates invalides pour fetchAvailableAgents :", start, end)
+      setAvailableAgents([])
+      return
+    }
     try {
       console.log(`📡 Requête envoyée : start_date=${start}, end_date=${end}`)
-
       const formattedStart = start.split("T")[0]
       const formattedEnd = end.split("T")[0]
-
       const accessToken = await getAccessToken()
       const response = await fetch(
-        `${apiUrl}/management/event/available-agents/?start_date=${formattedStart}&end_date=${formattedEnd}`,
+        `${apiUrl}/event/available-agents/?start_date=${formattedStart}&end_date=${formattedEnd}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         },
       )
-
       if (!response.ok) {
         const errorData = await response.json()
-        console.error("❌ Erreur backend :", errorData)
         throw new Error(errorData.error || "Erreur inconnue")
       }
-
       const data: Agent[] = await response.json()
       console.log(`✅ Agents disponibles reçus :`, data)
       setAvailableAgents(data)
@@ -106,7 +106,6 @@ export default function EventManagement() {
   const validateField = (key: string, value: string | number[]): string | null => {
     if (typeof value === "string" && !value.trim()) return `${key} est requis.`
     if (key === "agents" && (value as number[]).length === 0) return "Au moins un agent doit être assigné."
-
     if ((key === "start_date" || key === "end_date") && !isValid(new Date(value as string)))
       return "Date et heure invalides."
     if (key === "end_date" && new Date(value as string) <= new Date(newEvent.start_date))
@@ -126,40 +125,82 @@ export default function EventManagement() {
     return !hasErrors
   }
 
-  const addOrUpdateEvent = async () => {
+  const addEvent = async () => {
     if (!validateForm()) return
     setLoading(true)
     setFormError(null)
     try {
       const accessToken = await getAccessToken()
-      console.log("📤 Données envoyées :", JSON.stringify(newEvent, null, 2))
-      const url = editingEventId
-        ? `${apiUrl}/management/update-event/${editingEventId}/`
-        : `${apiUrl}/management/create-event/`
-      const method = editingEventId ? "PUT" : "POST"
-      const response = await fetch(url, {
-        method: method,
+      console.log("📤 Données envoyées pour ajout :", JSON.stringify(newEvent, null, 2))
+      const response = await fetch(`${apiUrl}/event/create/`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify(newEvent),
       })
+      const result = await response.json()
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(
-          errorData.message || `Erreur lors de ${editingEventId ? "la modification" : "l'ajout"} de l'événement.`,
-        )
+        throw new Error(result.message || result.error || "Erreur lors de l'ajout de l'événement.")
       }
-      const result: Event = await response.json()
-      if (editingEventId) {
-        setEvents(events.map((event) => (event.id === editingEventId ? result : event)))
-      } else {
-        setEvents([...events, result])
+      const eventResult: Event = {
+        id: result.event.id,
+        location: result.event.location,
+        company_name: result.event.company_name,
+        event_code: result.event.event_code,
+        start_date: result.event.start_date,
+        end_date: result.event.end_date,
+        agents: result.event.agents, // Maintenant une liste d’IDs
       }
+      console.log("Résultat de l’ajout :", eventResult)
+      setEvents([...events, eventResult])
+      fetchAvailableAgents(newEvent.start_date, newEvent.end_date)
       resetForm()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erreur inconnue."
+      console.error("Erreur lors de l’ajout :", err)
+      setFormError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateEvent = async () => {
+    if (!validateForm() || !editingEventId) return
+    setLoading(true)
+    setFormError(null)
+    try {
+      const accessToken = await getAccessToken()
+      console.log("📤 Données envoyées pour modification :", JSON.stringify(newEvent, null, 2))
+      const response = await fetch(`${apiUrl}/events/update/${editingEventId}/update/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(newEvent),
+      })
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.message || result.error || "Erreur lors de la modification de l'événement.")
+      }
+      const eventResult: Event = {
+        id: result.event.id,
+        location: result.event.location,
+        company_name: result.event.company_name,
+        event_code: result.event.event_code,
+        start_date: result.event.start_date,
+        end_date: result.event.end_date,
+        agents: result.event.agents, // Maintenant une liste d’IDs
+      }
+      console.log("Résultat de la modification :", eventResult)
+      setEvents(events.map((event) => (event.id === editingEventId ? eventResult : event)))
+      fetchAvailableAgents(newEvent.start_date, newEvent.end_date)
+      resetForm()
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erreur inconnue."
+      console.error("Erreur lors de la modification :", err)
       setFormError(errorMessage)
     } finally {
       setLoading(false)
@@ -167,15 +208,23 @@ export default function EventManagement() {
   }
 
   const deleteEvent = async (id: number) => {
+    console.log("ID de l'événement à supprimer :", id)
+    if (!id || id === undefined) {
+      setFormError("ID de l'événement non défini.")
+      return
+    }
     try {
       const accessToken = await getAccessToken()
-      const response = await fetch(`${apiUrl}/management/delete-event/${id}/`, {
+      const response = await fetch(`${apiUrl}/event/delete/${id}/delete/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       })
-      if (!response.ok) throw new Error("Erreur lors de la suppression de l'événement.")
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Erreur lors de la suppression.")
+      }
       setEvents(events.filter((event) => event.id !== id))
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erreur inconnue."
@@ -397,7 +446,6 @@ export default function EventManagement() {
                     const updatedAgents = newEvent.agents.includes(agentId)
                       ? newEvent.agents
                       : [...newEvent.agents, agentId]
-
                     setNewEvent({ ...newEvent, agents: updatedAgents })
                     setErrors({ ...errors, agents: validateField("agents", updatedAgents) })
                   }}
@@ -420,7 +468,7 @@ export default function EventManagement() {
                 {newEvent.agents
                   .map((id) => {
                     const agent = availableAgents.find((agent) => agent.id === id)
-                    return agent ? agent.username : ""
+                    return agent ? agent.username : "Agent inconnu"
                   })
                   .join(", ")}
               </div>
@@ -429,7 +477,7 @@ export default function EventManagement() {
 
           <div className="flex items-center space-x-4 mt-6">
             <Button
-              onClick={addOrUpdateEvent}
+              onClick={isEditing ? updateEvent : addEvent}
               disabled={loading}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
@@ -517,4 +565,3 @@ export default function EventManagement() {
     </div>
   )
 }
-
