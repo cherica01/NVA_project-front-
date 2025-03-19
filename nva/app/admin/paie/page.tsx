@@ -3,16 +3,17 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { CreditCard, DollarSign } from "lucide-react"
+import { CreditCard, DollarSign, AlertCircle } from "lucide-react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { apiUrl } from "@/util/config"
 import { getAccessToken } from "@/util/biscuit"
 import { useRouter } from "next/navigation"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface Agent {
   id: number
@@ -23,6 +24,9 @@ interface Payment {
   id: number
   agent: string
   amount: number
+  work_days: number
+  total_payment: number | string
+  description: string
   created_at: string
 }
 
@@ -32,15 +36,28 @@ export default function PaymentManagementPage() {
   const [selectedAgent, setSelectedAgent] = useState<string>("")
   const [workDays, setWorkDays] = useState<string>("")
   const [amount, setAmount] = useState<string>("")
+  const [description, setDescription] = useState<string>("")
   const [paymentType, setPaymentType] = useState<"credit" | "debit">("credit")
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(false)
+  const [fetchingData, setFetchingData] = useState(true)
   const [formError, setFormError] = useState<string | null>(null)
+  const [formSuccess, setFormSuccess] = useState<string | null>(null)
 
   useEffect(() => {
     fetchAgents()
     fetchPayments()
   }, [])
+
+  // Effet pour effacer les messages de succès après 5 secondes
+  useEffect(() => {
+    if (formSuccess) {
+      const timer = setTimeout(() => {
+        setFormSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [formSuccess])
 
   const fetchAgents = async () => {
     try {
@@ -49,9 +66,11 @@ export default function PaymentManagementPage() {
         handleAuthError()
         return
       }
-      const response = await fetch(`${apiUrl}/management/agents/`, {
+
+      const response = await fetch(`${apiUrl}/accounts/agents/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
+
       if (!response.ok) {
         if (response.status === 401) {
           handleAuthError()
@@ -59,8 +78,19 @@ export default function PaymentManagementPage() {
         }
         throw new Error("Erreur lors du chargement des agents")
       }
+
       const data = await response.json()
-      setAgents(data)
+      console.log("Agents récupérés:", data) // Débogage
+
+      // Vérifier le format des données et les transformer si nécessaire
+      const formattedAgents = Array.isArray(data)
+        ? data.map((agent) => ({
+            id: agent.id,
+            username: agent.username || agent.email || `Agent ${agent.id}`,
+          }))
+        : []
+
+      setAgents(formattedAgents)
     } catch (error) {
       console.error("Erreur lors du chargement des agents:", error)
       setFormError("Impossible de charger la liste des agents")
@@ -68,15 +98,18 @@ export default function PaymentManagementPage() {
   }
 
   const fetchPayments = async () => {
+    setFetchingData(true)
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
         handleAuthError()
         return
       }
-      const response = await fetch(`${apiUrl}/management/payments/`, {
+
+      const response = await fetch(`${apiUrl}/payment/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
+
       if (!response.ok) {
         if (response.status === 401) {
           handleAuthError()
@@ -84,43 +117,68 @@ export default function PaymentManagementPage() {
         }
         throw new Error("Erreur lors du chargement des paiements")
       }
+
       const data = await response.json()
       setPayments(data)
     } catch (error) {
       console.error("Erreur lors du chargement des paiements:", error)
       setFormError("Impossible de charger l'historique des paiements")
+    } finally {
+      setFetchingData(false)
     }
   }
 
   const handlePayment = async () => {
-    if (paymentType === "credit" && (!selectedAgent || !workDays || !amount)) {
-      setFormError("Veuillez remplir tous les champs pour un crédit")
+    // Validation des champs
+    if (!selectedAgent) {
+      setFormError("Veuillez sélectionner un agent")
       return
     }
-    if (paymentType === "debit" && (!selectedAgent || !amount)) {
-      setFormError("Veuillez sélectionner un agent et entrer un montant pour un débit")
+
+    if (!amount || Number.parseFloat(amount) <= 0) {
+      setFormError("Veuillez entrer un montant valide")
+      return
+    }
+
+    if (paymentType === "credit" && !workDays) {
+      setFormError("Veuillez indiquer le nombre de jours travaillés")
       return
     }
 
     setLoading(true)
     setFormError(null)
+    setFormSuccess(null)
+
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
         handleAuthError()
         return
       }
-      const response = await fetch(`${apiUrl}/management/payments/`, {
+
+      // Préparer la description
+      let paymentDescription = description
+      if (!paymentDescription) {
+        paymentDescription = paymentType === "credit" ? `Crédit pour ${workDays} jours travaillés` : `Débit de compte`
+      }
+
+      // Préparer les données pour l'API
+      const paymentData = {
+        agent_id: Number(selectedAgent),
+        amount: paymentType === "credit" ? Number.parseFloat(amount) : -Number.parseFloat(amount),
+        work_days: paymentType === "credit" ? Number.parseInt(workDays) : 0,
+        description: paymentDescription,
+      }
+
+      console.log("Données de paiement envoyées:", paymentData) // Débogage
+
+      const response = await fetch(`${apiUrl}/payment/create/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          agent_id: selectedAgent,
-          work_days: paymentType === "credit" ? Number.parseInt(workDays) : 0,
-          amount: paymentType === "credit" ? Number.parseFloat(amount) : -Number.parseFloat(amount),
-        }),
+        body: JSON.stringify(paymentData),
       })
 
       if (!response.ok) {
@@ -133,11 +191,20 @@ export default function PaymentManagementPage() {
       }
 
       const result = await response.json()
-      setFormError(`Paiement ${paymentType === "credit" ? "crédité" : "débité"} avec succès pour ${result.username}`)
+      console.log("Résultat du paiement:", result) // Débogage
 
+      // Message de succès
+      const agentName = agents.find((a) => a.id === Number(selectedAgent))?.username || `Agent ${selectedAgent}`
+      const successMessage = `Paiement ${paymentType === "credit" ? "crédité" : "débité"} avec succès pour ${agentName}`
+      setFormSuccess(successMessage)
+
+      // Réinitialiser le formulaire
       setSelectedAgent("")
       setWorkDays("")
       setAmount("")
+      setDescription("")
+
+      // Rafraîchir la liste des paiements
       fetchPayments()
     } catch (error) {
       console.error("Erreur lors du paiement:", error)
@@ -152,34 +219,74 @@ export default function PaymentManagementPage() {
     router.push("/login")
   }
 
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "Pp", { locale: fr })
+    } catch (error) {
+      return "Date invalide"
+    }
+  }
+
+  // Fonction pour formater le montant total en toute sécurité
+  const formatAmount = (value: number | string | undefined | null) => {
+    if (value === undefined || value === null) return "0.00"
+
+    // Si c'est déjà une chaîne, essayer de la convertir en nombre
+    if (typeof value === "string") {
+      const parsed = Number.parseFloat(value)
+      return isNaN(parsed) ? "0.00" : parsed.toFixed(2)
+    }
+
+    // Si c'est un nombre
+    return value.toFixed(2)
+  }
+
   return (
     <div className="p-6 space-y-8 bg-gray-200 min-h-screen">
       <Card className="backdrop-blur-lg bg-white/10 dark:bg-green-950/30 border-none shadow-lg">
         <CardHeader className="bg-green-800 text-white dark:bg-green-950">
           <CardTitle className="text-3xl font-bold">Gestion des Paiements</CardTitle>
+          <CardDescription className="text-gray-200">Créditez ou débitez le compte des agents</CardDescription>
         </CardHeader>
         <CardContent className="mt-6">
           {formError && (
-            <div className="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">{formError}</div>
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{formError}</AlertDescription>
+            </Alert>
           )}
+
+          {formSuccess && (
+            <Alert className="mb-4 bg-green-100 text-green-800 border-green-200">
+              <AlertDescription>{formSuccess}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <CreditCard className="text-green-500" />
-                <Select onValueChange={setSelectedAgent}>
+                <Select value={selectedAgent} onValueChange={setSelectedAgent}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Sélectionner un agent" />
                   </SelectTrigger>
                   <SelectContent>
-                    {agents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id.toString()}>
-                        {agent.username}
+                    {agents.length === 0 ? (
+                      <SelectItem value="no-agents" disabled>
+                        Aucun agent disponible
                       </SelectItem>
-                    ))}
+                    ) : (
+                      agents.map((agent) => (
+                        <SelectItem key={agent.id} value={agent.id.toString()}>
+                          {agent.username}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
             </div>
+
             {paymentType === "credit" && (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
@@ -193,6 +300,7 @@ export default function PaymentManagementPage() {
                 </div>
               </div>
             )}
+
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <DollarSign className="text-green-500" />
@@ -206,7 +314,17 @@ export default function PaymentManagementPage() {
                 />
               </div>
             </div>
+
+            <div className="space-y-4 lg:col-span-3">
+              <Input
+                placeholder="Description (optionnel)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="border-green-300 focus:ring-green-500"
+              />
+            </div>
           </div>
+
           <div className="flex items-center space-x-4 mt-6">
             <Button
               onClick={() => setPaymentType("credit")}
@@ -223,6 +341,7 @@ export default function PaymentManagementPage() {
               Débiter
             </Button>
           </div>
+
           <Button
             onClick={handlePayment}
             disabled={loading}
@@ -238,43 +357,61 @@ export default function PaymentManagementPage() {
           <CardTitle className="text-2xl font-bold">Historique des Paiements</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-green-100 dark:bg-green-900">
-                  {["Agent", "Montant", "Action", "Date"].map((header) => (
-                    <TableHead key={header} className="text-green-700 dark:text-green-300 font-semibold">
-                      {header}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((payment) => (
-                  <TableRow key={payment.id} className="hover:bg-green-50 dark:hover:bg-green-800/50">
-                    <TableCell>{payment.agent}</TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`${
-                          payment.amount >= 0 ? "bg-green-300 text-green-900" : "bg-red-300 text-red-900"
-                        } dark:bg-green-700 dark:text-white`}
-                      >
-                        {Math.abs(payment.amount).toFixed(2)} €
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {payment.amount >= 0 ? (
-                        <Badge className="bg-green-300 text-green-900 dark:bg-green-700 dark:text-white">Crédit</Badge>
-                      ) : (
-                        <Badge className="bg-red-300 text-red-900 dark:bg-red-700 dark:text-white">Débit</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{format(new Date(payment.created_at), "Pp", { locale: fr })}</TableCell>
+          {fetchingData ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Chargement des paiements...</p>
+            </div>
+          ) : payments.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Aucun paiement trouvé. Effectuez votre premier paiement !</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-green-100 dark:bg-green-900">
+                    {["Agent", "Montant", "Type", "Jours travaillés", "Description", "Date", "Solde total"].map(
+                      (header) => (
+                        <TableHead key={header} className="text-green-700 dark:text-green-300 font-semibold">
+                          {header}
+                        </TableHead>
+                      ),
+                    )}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {payments.map((payment) => (
+                    <TableRow key={payment.id} className="hover:bg-green-50 dark:hover:bg-green-800/50">
+                      <TableCell>{payment.agent}</TableCell>
+                      <TableCell>
+                        <Badge
+                          className={`${
+                            payment.amount >= 0 ? "bg-green-300 text-green-900" : "bg-red-300 text-red-900"
+                          } dark:bg-green-700 dark:text-white`}
+                        >
+                          {Math.abs(payment.amount).toFixed(2)} AR
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {payment.amount >= 0 ? (
+                          <Badge className="bg-green-300 text-green-900 dark:bg-green-700 dark:text-white">
+                            Crédit
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-red-300 text-red-900 dark:bg-red-700 dark:text-white">Débit</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{payment.work_days || "-"}</TableCell>
+                      <TableCell>{payment.description || "-"}</TableCell>
+                      <TableCell>{formatDate(payment.created_at)}</TableCell>
+                      <TableCell className="font-medium">{formatAmount(payment.total_payment)} €</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
