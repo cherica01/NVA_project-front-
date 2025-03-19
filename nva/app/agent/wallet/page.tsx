@@ -1,125 +1,285 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowUpCircle, ArrowDownCircle, Euro, Calendar } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Wallet, CreditCard, ArrowDownCircle, ArrowUpCircle, TrendingUp, TrendingDown } from "lucide-react"
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
+import { apiUrl } from "@/util/config"
+import { getAccessToken } from "@/util/biscuit"
+import { useRouter } from "next/navigation"
 
-// Données fictives
-const fakeBalance = 1250.75
-const fakeTransactions = [
-  { id: 1, type: "credit", amount: 500, description: "Paiement pour l'événement A", date: "2023-08-15" },
-  { id: 2, type: "debit", amount: 50, description: "Frais de transport", date: "2023-08-14" },
-  { id: 3, type: "credit", amount: 750, description: "Bonus performance", date: "2023-08-10" },
-  { id: 4, type: "debit", amount: 100, description: "Achat équipement", date: "2023-08-05" },
-  { id: 5, type: "credit", amount: 600, description: "Paiement pour l'événement B", date: "2023-08-01" },
-]
+interface Payment {
+  id: number
+  agent: string
+  amount: number
+  work_days: number
+  total_payment: number | string
+  description: string
+  created_at: string
+}
 
-export default function AgentWallet() {
-  const [balance] = useState(fakeBalance)
-  const [transactions] = useState(fakeTransactions)
+interface AgentTotal {
+  agent_id: number
+  agent_username: string
+  total_payment: number | string
+  total_credits: number
+  total_debits: number
+}
 
-  const totalEarnings = transactions.filter((t) => t.type === "credit").reduce((sum, t) => sum + t.amount, 0)
+export default function AgentWalletPage() {
+  const router = useRouter()
+  const [agentTotal, setAgentTotal] = useState<AgentTotal | null>(null)
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const totalExpenses = transactions.filter((t) => t.type === "debit").reduce((sum, t) => sum + t.amount, 0)
+  useEffect(() => {
+    fetchAgentTotal()
+    fetchPaymentHistory()
+  }, [])
 
-  const getNextPaymentDate = () => {
-    const today = new Date()
-    const nextPayment = new Date(today.getFullYear(), today.getMonth(), 9)
-    if (today.getDate() > 9) {
-      nextPayment.setMonth(nextPayment.getMonth() + 1)
+  const fetchAgentTotal = async () => {
+    try {
+      const accessToken = await getAccessToken()
+      if (!accessToken) {
+        handleAuthError()
+        return
+      }
+
+      const response = await fetch(`${apiUrl}/payment/agent/total/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          handleAuthError()
+          return
+        }
+        throw new Error("Erreur lors du chargement du solde")
+      }
+
+      const data = await response.json()
+      setAgentTotal(data)
+    } catch (error) {
+      console.error("Erreur lors du chargement du solde:", error)
+      setError("Impossible de charger votre solde")
     }
-    return nextPayment
   }
 
-  const nextPaymentDate = getNextPaymentDate()
+  const fetchPaymentHistory = async () => {
+    try {
+      const accessToken = await getAccessToken()
+      if (!accessToken) {
+        handleAuthError()
+        return
+      }
+
+      const response = await fetch(`${apiUrl}/payment/agent/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          handleAuthError()
+          return
+        }
+        throw new Error("Erreur lors du chargement de l'historique des paiements")
+      }
+
+      const data = await response.json()
+      setPayments(data)
+    } catch (error) {
+      console.error("Erreur lors du chargement de l'historique:", error)
+      setError("Impossible de charger votre historique de paiements")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAuthError = () => {
+    setError("Votre session a expiré. Veuillez vous reconnecter.")
+    router.push("/login")
+  }
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "Pp", { locale: fr })
+    } catch (error) {
+      return "Date invalide"
+    }
+  }
+
+  // Fonction pour formater le montant total en toute sécurité
+  const formatAmount = (value: number | string | undefined | null) => {
+    if (value === undefined || value === null) return "0.00"
+
+    // Si c'est déjà une chaîne, essayer de la convertir en nombre
+    if (typeof value === "string") {
+      const parsed = Number.parseFloat(value)
+      return isNaN(parsed) ? "0.00" : parsed.toFixed(2)
+    }
+
+    // Si c'est un nombre
+    return value.toFixed(2)
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+      </div>
+    )
+  }
+
+  // Récupérer les 3 derniers paiements pour l'affichage
+  const recentPayments = [...payments]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 3)
 
   return (
-    <div className="space-y-8">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Solde actuel</CardTitle>
-            <Euro className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">€{balance.toFixed(2)}</div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Mis à jour aujourd'hui</p>
-          </CardContent>
-        </Card>
-        <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gains totaux</CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">€{totalEarnings.toFixed(2)}</div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Ce mois-ci</p>
-          </CardContent>
-        </Card>
-        <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Dépenses totales</CardTitle>
-            <ArrowDownCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">€{totalExpenses.toFixed(2)}</div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Ce mois-ci</p>
-          </CardContent>
-        </Card>
-        <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Prochain paiement</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {nextPaymentDate.toLocaleDateString("fr-FR")}
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Chaque 9 du mois</p>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="p-6 space-y-8 bg-gray-200 min-h-screen">
+      {error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
 
-      <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg">
-        <CardHeader className="bg-green-700 text-white dark:bg-green-900">
-          <CardTitle className="text-2xl font-bold">Historique des Transactions</CardTitle>
+      <Card className="backdrop-blur-lg bg-white/10 dark:bg-green-950/30 border-none shadow-lg">
+        <CardHeader className="bg-green-800 text-white dark:bg-green-950">
+          <CardTitle className="text-3xl font-bold flex items-center">
+            <Wallet className="mr-2" /> Mon Portefeuille
+          </CardTitle>
+          <CardDescription className="text-gray-200">
+            Consultez votre solde et vos dernières transactions
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="bg-white shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl text-gray-700">Solde actuel</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-bold text-green-600">{formatAmount(agentTotal?.total_payment)} AR</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl text-gray-700 flex items-center">
+                  <TrendingUp className="mr-2 text-green-500" size={18} /> Crédits
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{agentTotal?.total_credits || 0}</div>
+                <p className="text-sm text-gray-500">transactions</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl text-gray-700 flex items-center">
+                  <TrendingDown className="mr-2 text-red-500" size={18} /> Débits
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{agentTotal?.total_debits || 0}</div>
+                <p className="text-sm text-gray-500">transactions</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="bg-white shadow-md mt-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl text-gray-700">Dernières transactions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {recentPayments.length === 0 ? (
+                  <p className="text-gray-500 text-sm">Aucune transaction récente</p>
+                ) : (
+                  recentPayments.map((payment) => (
+                    <div key={payment.id} className="flex justify-between items-center p-2 border-b">
+                      <div className="flex items-center">
+                        {payment.amount >= 0 ? (
+                          <ArrowDownCircle className="text-green-500 mr-2" size={18} />
+                        ) : (
+                          <ArrowUpCircle className="text-red-500 mr-2" size={18} />
+                        )}
+                        <span className="text-sm truncate max-w-[150px]">
+                          {payment.description ||
+                            (payment.amount >= 0 ? `Crédit pour ${payment.work_days} jours` : "Débit de compte")}
+                        </span>
+                      </div>
+                      <Badge
+                        className={payment.amount >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                      >
+                        {payment.amount >= 0 ? "+" : "-"}
+                        {Math.abs(payment.amount).toFixed(2)} €
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </CardContent>
+      </Card>
+
+      <Card className="backdrop-blur-lg bg-white/10 dark:bg-green-950/30 border-none shadow-lg overflow-hidden">
+        <CardHeader className="bg-green-600 text-white dark:bg-green-800">
+          <CardTitle className="text-2xl font-bold flex items-center">
+            <CreditCard className="mr-2" /> Historique des Paiements
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Montant</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell>{new Date(transaction.date).toLocaleDateString("fr-FR")}</TableCell>
-                  <TableCell>{transaction.description}</TableCell>
-                  <TableCell>
-                    <Badge variant={transaction.type === "credit" ? "default" : "destructive"} className="capitalize">
-                      {transaction.type === "credit" ? (
-                        <ArrowUpCircle className="mr-1 h-3 w-3 inline" />
-                      ) : (
-                        <ArrowDownCircle className="mr-1 h-3 w-3 inline" />
-                      )}
-                      {transaction.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    <span className={transaction.type === "credit" ? "text-green-600" : "text-red-600"}>
-                      {transaction.type === "credit" ? "+" : "-"}€{transaction.amount.toFixed(2)}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {payments.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Aucun paiement trouvé dans votre historique.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-green-100 dark:bg-green-900">
+                    {["Montant", "Type", "Jours travaillés", "Description", "Date", "Solde"].map((header) => (
+                      <TableHead key={header} className="text-green-700 dark:text-green-300 font-semibold">
+                        {header}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payments.map((payment) => (
+                    <TableRow key={payment.id} className="hover:bg-green-50 dark:hover:bg-green-800/50">
+                      <TableCell>
+                        <Badge
+                          className={`${
+                            payment.amount >= 0 ? "bg-green-300 text-green-900" : "bg-red-300 text-red-900"
+                          } dark:bg-green-700 dark:text-white`}
+                        >
+                          {payment.amount >= 0 ? "+" : "-"}
+                          {Math.abs(payment.amount).toFixed(2)} €
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {payment.amount >= 0 ? (
+                          <Badge className="bg-green-300 text-green-900 dark:bg-green-700 dark:text-white">
+                            Crédit
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-red-300 text-red-900 dark:bg-red-700 dark:text-white">Débit</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{payment.work_days || "-"}</TableCell>
+                      <TableCell>{payment.description || "-"}</TableCell>
+                      <TableCell>{formatDate(payment.created_at)}</TableCell>
+                      <TableCell className="font-medium">{formatAmount(payment.total_payment)} €</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
