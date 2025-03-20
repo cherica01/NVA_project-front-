@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Bell, AlertCircle, Check, Calendar, Users, User, RefreshCw } from "lucide-react"
+  Bell,
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { apiUrl } from "@/util/config"
