@@ -271,8 +271,8 @@ export default function Dashboard() {
                   <>
                     <div className="text-3xl font-bold text-gray-800 dark:text-white">
                       {new Date().getDate() > 19 
-                        ? format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 9), "d MMM", { locale: fr })
-                        : format(new Date(new Date().getFullYear(), new Date().getMonth(), 9), "d MMM", { locale: fr })}
+                        ? format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 19), "d MMM", { locale: fr })
+                        : format(new Date(new Date().getFullYear(), new Date().getMonth(), 19), "d MMM", { locale: fr })}
                     </div>
                     <p className="text-xs text-green-500 flex items-center gap-1 mt-1">Chaque 9 du mois</p>
                   </>
