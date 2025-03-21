@@ -405,7 +405,7 @@ export default function PaymentManagementPage() {
                       <TableCell>{payment.work_days || "-"}</TableCell>
                       <TableCell>{payment.description || "-"}</TableCell>
                       <TableCell>{formatDate(payment.created_at)}</TableCell>
-                      <TableCell className="font-medium">{formatAmount(payment.total_payment)} €</TableCell>
+                      <TableCell className="font-medium">{formatAmount(payment.total_payment)} AR</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
