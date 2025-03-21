@@ -448,19 +448,11 @@ export default function AdminMessagingPage() {
       .toUpperCase()
   }
 
+  // Fonction pour obtenir l'autre participant (pas l'utilisateur actuel)
   const getOtherParticipant = (conversation: Conversation) => {
-    // Trouver le participant qui n'est pas l'utilisateur actuel
-    return conversation.participants[0]
-  }
-
-  // Modifier l'affichage des participants dans les conversations pour montrer leur rôle
-  const getParticipantInfo = (conversation: Conversation) => {
-    // Trouver le participant qui n'est pas l'utilisateur actuel
-    const otherParticipant = getOtherParticipant(conversation)
-    return {
-      ...otherParticipant,
-      roleLabel: otherParticipant.is_staff ? "Administrateur" : otherParticipant.is_agent ? "Agent" : "Utilisateur",
-    }
+    // Dans l'interface admin, nous voulons toujours afficher l'autre participant
+    // Nous supposons que le premier participant est toujours l'autre utilisateur
+    return conversation.participants.find((p) => p.is_agent) || conversation.participants[0]
   }
 
   // Filter conversations based on search term and active tab
@@ -582,9 +574,9 @@ export default function AdminMessagingPage() {
                           <p className="text-gray-600">Aucune conversation trouvée</p>
                         </div>
                       ) : (
-                        // Utiliser getParticipantInfo dans l'affichage des conversations
+                        // Afficher les conversations avec le nom du destinataire
                         filteredConversations.map((conversation) => {
-                          const participant = getParticipantInfo(conversation)
+                          const otherParticipant = getOtherParticipant(conversation)
 
                           return (
                             <motion.div
@@ -602,23 +594,13 @@ export default function AdminMessagingPage() {
                             >
                               <div className="flex items-center space-x-3">
                                 <Avatar>
-                                  <AvatarFallback
-                                    className={`${participant.is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"}`}
-                                  >
-                                    {getInitials(participant.username)}
+                                  <AvatarFallback className="bg-green-200 text-green-700">
+                                    {getInitials(otherParticipant.username)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex justify-between items-center">
-                                    <div className="flex items-center">
-                                      <p className="font-medium truncate">{participant.username}</p>
-                                      <Badge
-                                        className="ml-2 text-xs"
-                                        variant={participant.is_staff ? "default" : "outline"}
-                                      >
-                                        {participant.roleLabel}
-                                      </Badge>
-                                    </div>
+                                    <p className="font-medium truncate">{otherParticipant.username}</p>
                                     {conversation.last_message && (
                                       <p className="text-xs text-gray-500">
                                         {formatMessageTime(conversation.last_message.created_at)}
@@ -723,7 +705,7 @@ export default function AdminMessagingPage() {
                       {users.length === 0 ? (
                         <p className="text-sm text-gray-500">Aucun utilisateur disponible</p>
                       ) : (
-                        // Modifier l'affichage des utilisateurs dans la liste "Nouveau" pour montrer le rôle
+                        // Afficher la liste des utilisateurs pour créer une nouvelle conversation
                         filteredUsers.map((user) => (
                           <motion.div
                             key={user.id}
@@ -732,20 +714,12 @@ export default function AdminMessagingPage() {
                             onClick={() => startNewConversation(user)}
                           >
                             <Avatar className="h-8 w-8">
-                              <AvatarFallback
-                                className={`text-xs ${user.is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"}`}
-                              >
+                              <AvatarFallback className="text-xs bg-green-200 text-green-700">
                                 {getInitials(user.username)}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center">
-                                <p className="font-medium text-sm truncate">{user.username}</p>
-                                {user.is_staff && (
-                                  <Badge className="ml-2 bg-green-700 text-white text-xs">Administrateur</Badge>
-                                )}
-                                {user.is_agent && <Badge className="ml-2 bg-green-500 text-white text-xs">Agent</Badge>}
-                              </div>
+                              <p className="font-medium text-sm truncate">{user.username}</p>
                               {user.email && <p className="text-xs text-gray-500 truncate">{user.email}</p>}
                             </div>
                             <Button size="sm" variant="ghost" className="px-2">
@@ -768,22 +742,12 @@ export default function AdminMessagingPage() {
                   <div className="p-4 border-b border-green-100 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <Avatar>
-                        <AvatarFallback
-                          className={`${getOtherParticipant(selectedConversation).is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"}`}
-                        >
+                        <AvatarFallback className="bg-green-200 text-green-700">
                           {getInitials(getOtherParticipant(selectedConversation).username)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="flex items-center">
-                          <p className="font-medium">{getOtherParticipant(selectedConversation).username}</p>
-                          <Badge
-                            className="ml-2 text-xs"
-                            variant={getOtherParticipant(selectedConversation).is_staff ? "default" : "outline"}
-                          >
-                            {getOtherParticipant(selectedConversation).is_staff ? "Administrateur" : "Agent"}
-                          </Badge>
-                        </div>
+                        <p className="font-medium">{getOtherParticipant(selectedConversation).username}</p>
                         <p className="text-xs text-gray-500">
                           {getOtherParticipant(selectedConversation).email || "Aucun email"}
                         </p>
@@ -815,7 +779,9 @@ export default function AdminMessagingPage() {
                     ) : (
                       <div className="space-y-4">
                         {messages.map((message) => {
-                          const isCurrentUser = message.sender.id !== getOtherParticipant(selectedConversation).id
+                          // Déterminer si le message est de l'utilisateur actuel en vérifiant s'il n'est pas de l'autre participant
+                          const otherParticipant = getOtherParticipant(selectedConversation)
+                          const isCurrentUser = message.sender.id !== otherParticipant.id
 
                           return (
                             <motion.div
@@ -828,7 +794,7 @@ export default function AdminMessagingPage() {
                                 {!isCurrentUser && (
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback className="bg-green-200 text-green-700 text-xs">
-                                      {getInitials(message.sender.username)}
+                                      {getInitials(otherParticipant.username)}
                                     </AvatarFallback>
                                   </Avatar>
                                 )}
@@ -846,7 +812,7 @@ export default function AdminMessagingPage() {
                                 {isCurrentUser && (
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback className="bg-green-700 text-white text-xs">
-                                      {getInitials(message.sender.username)}
+                                      {getInitials("Moi")}
                                     </AvatarFallback>
                                   </Avatar>
                                 )}
@@ -926,22 +892,12 @@ export default function AdminMessagingPage() {
                                 }}
                               >
                                 <Avatar className="h-8 w-8">
-                                  <AvatarFallback
-                                    className={`text-xs ${user.is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"}`}
-                                  >
+                                  <AvatarFallback className="text-xs bg-green-200 text-green-700">
                                     {getInitials(user.username)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center">
-                                    <p className="font-medium text-sm truncate">{user.username}</p>
-                                    {user.is_staff && (
-                                      <Badge className="ml-2 bg-green-700 text-white text-xs">Administrateur</Badge>
-                                    )}
-                                    {user.is_agent && (
-                                      <Badge className="ml-2 bg-green-500 text-white text-xs">Agent</Badge>
-                                    )}
-                                  </div>
+                                  <p className="font-medium text-sm truncate">{user.username}</p>
                                   {user.email && <p className="text-xs text-gray-500 truncate">{user.email}</p>}
                                 </div>
                               </motion.div>
