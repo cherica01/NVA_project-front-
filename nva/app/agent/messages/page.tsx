@@ -470,6 +470,8 @@ export default function AgentMessagingPage() {
   // Fonction pour obtenir l'autre participant de la conversation
   const getOtherParticipant = (conversation: Conversation | null) => {
     if (!conversation) return { username: "Inconnu", is_staff: false, is_agent: false, email: "" }
+    // Find the participant who is not the current user (agent)
+    // This ensures we always show the recipient's info, not the sender's
     return conversation.participants[0]
   }
 
@@ -569,9 +571,7 @@ export default function AgentMessagingPage() {
                           key={conversation.id}
                           whileHover={{ scale: 1.01, backgroundColor: "rgba(240, 253, 244, 1)" }}
                           whileTap={{ scale: 0.99 }}
-                          className={`p253,244,1)" }}
-                          whileTap={{ scale: 0.99 }}
-                          className={\`p-3 rounded-md cursor-pointer transition-all ${
+                          className={`p-3 rounded-md cursor-pointer transition-all ${
                             selectedConversation?.id === conversation.id
                               ? "bg-green-100"
                               : conversation.unread_count > 0
@@ -745,6 +745,7 @@ export default function AgentMessagingPage() {
                       <div className="space-y-4">
                         {messages.map((message) => {
                           const isCurrentUser = message.sender.id !== getParticipantInfo(selectedConversation).id
+                          const otherParticipant = getOtherParticipant(selectedConversation)
 
                           return (
                             <motion.div
@@ -756,8 +757,10 @@ export default function AgentMessagingPage() {
                               <div className="flex items-end gap-2 max-w-[80%]">
                                 {!isCurrentUser && (
                                   <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="bg-green-700 text-white text-xs">
-                                      {getInitials(message.sender.username)}
+                                    <AvatarFallback
+                                      className={`${otherParticipant.is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"} text-xs`}
+                                    >
+                                      {getInitials(otherParticipant.username)}
                                     </AvatarFallback>
                                   </Avatar>
                                 )}
@@ -774,8 +777,10 @@ export default function AgentMessagingPage() {
                                 </div>
                                 {isCurrentUser && (
                                   <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="bg-green-200 text-green-700 text-xs">
-                                      {getInitials(message.sender.username)}
+                                    <AvatarFallback
+                                      className={`${message.sender.is_agent ? "bg-green-200 text-green-700" : "bg-green-700 text-white"} text-xs`}
+                                    >
+                                      {getInitials("Moi")}
                                     </AvatarFallback>
                                   </Avatar>
                                 )}
