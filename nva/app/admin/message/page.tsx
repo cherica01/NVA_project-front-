@@ -584,36 +584,36 @@ export default function AdminMessagingPage() {
                               whileHover={{ scale: 1.01, backgroundColor: "rgba(240, 253, 244, 1)" }}
                               whileTap={{ scale: 0.99 }}
                               className={`p-3 rounded-md cursor-pointer transition-all ${
-                                selectedConversation?.id === conversation.id
-                                  ? "bg-green-100"
-                                  : conversation.unread_count > 0
-                                    ? "bg-green-50"
-                                    : ""
+                              selectedConversation?.id === conversation.id
+                                ? "bg-green-100"
+                                : conversation.unread_count > 0
+                                ? "bg-green-50"
+                                : ""
                               }`}
                               onClick={() => handleSelectConversation(conversation)}
                             >
                               <div className="flex items-center space-x-3">
-                                <Avatar>
-                                  <AvatarFallback className="bg-green-200 text-green-700">
-                                    {getInitials(otherParticipant.username)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex justify-between items-center">
-                                    <p className="font-medium truncate">{otherParticipant.username}</p>
-                                    {conversation.last_message && (
-                                      <p className="text-xs text-gray-500">
-                                        {formatMessageTime(conversation.last_message.created_at)}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-gray-500 truncate">
-                                    {conversation.last_message?.content || "Nouvelle conversation"}
+                              <Avatar>
+                                <AvatarFallback className="bg-green-200 text-green-700">
+                                {getInitials(getOtherParticipant(conversation).username)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-center">
+                                <p className="font-medium truncate">{getOtherParticipant(conversation).username}</p>
+                                {conversation.last_message && (
+                                  <p className="text-xs text-gray-500">
+                                  {formatMessageTime(conversation.last_message.created_at)}
                                   </p>
-                                </div>
-                                {conversation.unread_count > 0 && (
-                                  <Badge className="bg-green-500 text-white ml-2">{conversation.unread_count}</Badge>
                                 )}
+                                </div>
+                                <p className="text-sm text-gray-500 truncate">
+                                {conversation.last_message?.content || "Nouvelle conversation"}
+                                </p>
+                              </div>
+                              {conversation.unread_count > 0 && (
+                                <Badge className="bg-green-500 text-white ml-2">{conversation.unread_count}</Badge>
+                              )}
                               </div>
                             </motion.div>
                           )
