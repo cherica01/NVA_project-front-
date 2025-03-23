@@ -604,7 +604,7 @@ export default function AdminMessagingPage() {
                               whileTap={{ scale: 0.99 }}
                               className={`p-3 rounded-md cursor-pointer transition-all ${
                               selectedConversation?.id === conversation.id
-                                ? "bg-green-100"
+                                  ? "bg-green-100"
                                 : conversation.unread_count > 0
                                 ? "bg-green-50"
                                 : ""
