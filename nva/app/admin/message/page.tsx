@@ -465,6 +465,7 @@ export default function AdminMessagingPage() {
     return conversation.participants.find((p) => p.is_agent) || conversation.participants[0]
   }
 
+    // Si nous avons identifié l'utilisateur admin
 
   // Filter conversations based on search term and active tab
   const filteredConversations = conversations.filter((conversation) => {
