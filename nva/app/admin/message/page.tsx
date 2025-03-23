@@ -465,6 +465,7 @@ export default function AdminMessagingPage() {
     return conversation.participants.find((p) => p.is_agent) || conversation.participants[0]
   }
 
+  // Fonction pour déterminer si un message est de l'utilisateur actuel (admin)
     // Si nous avons identifié l'utilisateur admin
 
   // Filter conversations based on search term and active tab
