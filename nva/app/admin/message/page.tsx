@@ -461,7 +461,7 @@ export default function AdminMessagingPage() {
   // Fonction pour obtenir l'autre participant (pas l'utilisateur actuel)
   const getOtherParticipant = (conversation: Conversation) => {
     // Dans l'interface admin, nous voulons toujours afficher l'autre participant
-    // Nous supposons que le premier participant est toujours l'autre utilisateur
+    // Trouver le participant qui est un agent
     return conversation.participants.find((p) => p.is_agent) || conversation.participants[0]
   }
 
