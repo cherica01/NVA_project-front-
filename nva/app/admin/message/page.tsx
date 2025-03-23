@@ -470,6 +470,7 @@ export default function AdminMessagingPage() {
     // Si nous avons identifié l'utilisateur admin
       return message.sender.id === adminUser.id
     }
+
     // Sinon, on suppose que les messages non envoyés par un agent sont de l'admin
 
   // Filter conversations based on search term and active tab
