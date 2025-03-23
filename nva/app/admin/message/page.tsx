@@ -473,6 +473,7 @@ export default function AdminMessagingPage() {
     }
 
     // Sinon, on suppose que les messages non envoyés par un agent sont de l'admin
+    return !message.sender.is_agent
   }
 
   // Filter conversations based on search term and active tab
@@ -606,34 +607,34 @@ export default function AdminMessagingPage() {
                               className={`p-3 rounded-md cursor-pointer transition-all ${
                                 selectedConversation?.id === conversation.id
                                   ? "bg-green-100"
-                                : conversation.unread_count > 0
+                                  : conversation.unread_count > 0
                                     ? "bg-green-50"
-                                : ""
+                                    : ""
                               }`}
                               onClick={() => handleSelectConversation(conversation)}
                             >
                               <div className="flex items-center space-x-3">
-                              <Avatar>
-                                <AvatarFallback className="bg-green-200 text-green-700">
-                                {getInitials(getOtherParticipant(conversation).username)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-center">
-                                <p className="font-medium truncate">{getOtherParticipant(conversation).username}</p>
-                                {conversation.last_message && (
-                                  <p className="text-xs text-gray-500">
-                                  {formatMessageTime(conversation.last_message.created_at)}
+                                <Avatar>
+                                  <AvatarFallback className="bg-green-200 text-green-700">
+                                    {getInitials(otherParticipant.username)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex justify-between items-center">
+                                    <p className="font-medium truncate">{otherParticipant.username}</p>
+                                    {conversation.last_message && (
+                                      <p className="text-xs text-gray-500">
+                                        {formatMessageTime(conversation.last_message.created_at)}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-gray-500 truncate">
+                                    {conversation.last_message?.content || "Nouvelle conversation"}
                                   </p>
-                                )}
                                 </div>
-                                <p className="text-sm text-gray-500 truncate">
-                                {conversation.last_message?.content || "Nouvelle conversation"}
-                                </p>
-                              </div>
-                              {conversation.unread_count > 0 && (
-                                <Badge className="bg-green-500 text-white ml-2">{conversation.unread_count}</Badge>
-                              )}
+                                {conversation.unread_count > 0 && (
+                                  <Badge className="bg-green-500 text-white ml-2">{conversation.unread_count}</Badge>
+                                )}
                               </div>
                             </motion.div>
                           )
@@ -799,9 +800,9 @@ export default function AdminMessagingPage() {
                     ) : (
                       <div className="space-y-4">
                         {messages.map((message) => {
-                          // Déterminer si le message est de l'utilisateur actuel en vérifiant s'il n'est pas de l'autre participant
+                          // Déterminer si le message est de l'utilisateur actuel (admin)
+                          const isCurrentUser = isMessageFromAdmin(message)
                           const otherParticipant = getOtherParticipant(selectedConversation)
-                          const isCurrentUser = message.sender.id !== otherParticipant.id
 
                           return (
                             <motion.div
