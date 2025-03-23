@@ -294,6 +294,7 @@ export default function AdminMessagingPage() {
       if (data.length > 0) {
         // Trouver un message envoyé par un admin
         const adminMessage = data.find((msg: { sender: { is_agent: any } }) => !msg.sender.is_agent)
+        if (adminMessage) {
 
       // Mettre à jour le compteur de messages non lus
       fetchUnreadCount()
