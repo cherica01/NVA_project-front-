@@ -603,7 +603,7 @@ export default function AdminMessagingPage() {
                               whileHover={{ scale: 1.01, backgroundColor: "rgba(240, 253, 244, 1)" }}
                               whileTap={{ scale: 0.99 }}
                               className={`p-3 rounded-md cursor-pointer transition-all ${
-                              selectedConversation?.id === conversation.id
+                                selectedConversation?.id === conversation.id
                                   ? "bg-green-100"
                                 : conversation.unread_count > 0
                                 ? "bg-green-50"
