@@ -606,7 +606,7 @@ export default function AdminMessagingPage() {
                                 selectedConversation?.id === conversation.id
                                   ? "bg-green-100"
                                 : conversation.unread_count > 0
-                                ? "bg-green-50"
+                                    ? "bg-green-50"
                                 : ""
                               }`}
                               onClick={() => handleSelectConversation(conversation)}
