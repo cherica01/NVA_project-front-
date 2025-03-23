@@ -297,6 +297,7 @@ export default function AdminMessagingPage() {
         if (adminMessage) {
           setAdminUser(adminMessage.sender)
         }
+      }
 
       // Mettre à jour le compteur de messages non lus
       fetchUnreadCount()
