@@ -291,6 +291,7 @@ export default function AdminMessagingPage() {
       setMessages(data)
 
       // Identifier l'utilisateur admin à partir des messages
+        // Trouver un message envoyé par un admin
 
       // Mettre à jour le compteur de messages non lus
       fetchUnreadCount()
