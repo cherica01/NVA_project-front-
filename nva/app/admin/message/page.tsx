@@ -64,6 +64,7 @@ export default function AdminMessagingPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [adminUser, setAdminUser] = useState<User | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Active tab: All, Unread
