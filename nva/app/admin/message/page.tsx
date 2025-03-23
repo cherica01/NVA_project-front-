@@ -296,6 +296,7 @@ export default function AdminMessagingPage() {
         const adminMessage = data.find((msg: { sender: { is_agent: any } }) => !msg.sender.is_agent)
         if (adminMessage) {
           setAdminUser(adminMessage.sender)
+        }
 
       // Mettre à jour le compteur de messages non lus
       fetchUnreadCount()
