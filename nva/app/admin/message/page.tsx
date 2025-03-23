@@ -473,6 +473,7 @@ export default function AdminMessagingPage() {
     }
 
     // Sinon, on suppose que les messages non envoyés par un agent sont de l'admin
+  }
 
   // Filter conversations based on search term and active tab
   const filteredConversations = conversations.filter((conversation) => {
