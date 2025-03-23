@@ -466,6 +466,7 @@ export default function AdminMessagingPage() {
   }
 
   // Fonction pour déterminer si un message est de l'utilisateur actuel (admin)
+  const isMessageFromAdmin = (message: Message) => {
     // Si nous avons identifié l'utilisateur admin
 
   // Filter conversations based on search term and active tab
