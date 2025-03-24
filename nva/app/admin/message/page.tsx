@@ -288,7 +288,6 @@ export default function AdminMessagingPage() {
       }
 
       setMessages(data)
-        if (adminMessage) {
           setAdminUser(adminMessage.sender)
         }
       }
