@@ -448,7 +448,7 @@ export default function AdminMessagingPage() {
       .toUpperCase()
   }
 
-  // Fonction pour obtenir l'autre participant (pas l'utilisateur actuel)
+  // Fonction pour obtenir l'agent dans une conversation
   const getOtherParticipant = (conversation: Conversation) => {
     // Trouver le participant qui est un agent
     return conversation.participants.find((p) => p.is_agent) || conversation.participants[0]
