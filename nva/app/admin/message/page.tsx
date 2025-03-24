@@ -32,6 +32,7 @@ interface User {
 interface Message {
   id: number
   sender: User
+  sender_name?: string
   content: string
   is_read: boolean
   created_at: string
@@ -65,11 +66,13 @@ export default function AdminMessagingPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
 
   // Active tab: All, Unread
   const [activeTab, setActiveTab] = useState("all")
 
   useEffect(() => {
+    fetchCurrentUser()
     fetchUsers()
     fetchConversations()
     fetchUnreadCount()
@@ -78,6 +81,36 @@ export default function AdminMessagingPage() {
     const interval = setInterval(fetchUnreadCount, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  // Récupérer l'utilisateur courant
+  const fetchCurrentUser = async () => {
+    try {
+      const accessToken = await getAccessToken()
+      if (!accessToken) {
+        handleAuthError()
+        return
+      }
+
+      const response = await fetch(`${apiUrl}/messaging/current-user/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          handleAuthError()
+          return
+        }
+        console.error("Erreur lors du chargement de l'utilisateur courant:", response.status)
+        return
+      }
+
+      const data = await response.json()
+      console.log("Utilisateur courant:", data)
+      setCurrentUser(data)
+    } catch (error) {
+      console.error("Erreur lors du chargement de l'utilisateur courant:", error)
+    }
+  }
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -125,7 +158,7 @@ export default function AdminMessagingPage() {
         return
       }
 
-      const response = await fetch(`${apiUrl}/accounts/agents/`, {
+      const response = await fetch(`${apiUrl}/messaging/agents/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
 
@@ -138,6 +171,7 @@ export default function AdminMessagingPage() {
       }
 
       const data = await response.json()
+      console.log("Utilisateurs récupérés:", data)
 
       // Format the data properly
       const formattedUsers = Array.isArray(data)
@@ -180,28 +214,17 @@ export default function AdminMessagingPage() {
         throw new Error("Erreur lors du chargement des conversations")
       }
 
-      let data = await response.json()
+      const data = await response.json()
+      console.log("Données de conversations reçues:", data)
 
-      if (!Array.isArray(data)) {
-        console.error("La réponse n'est pas un tableau:", data)
-        // Si c'est un objet avec une propriété contenant les données
-        if (data && typeof data === "object") {
-          const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
-          if (possibleArrayProps.length > 0) {
-            data = data[possibleArrayProps[0]]
-          } else {
-            data = []
-          }
-        } else {
-          data = []
-        }
-      }
+      // Normaliser les données si nécessaire
+      const normalizedData = Array.isArray(data) ? data : []
 
-      setConversations(data)
+      setConversations(normalizedData)
 
       // Si une conversation est sélectionnée, mettre à jour ses données
       if (selectedConversation) {
-        const updatedConversation = data.find((conv: { id: number }) => conv.id === selectedConversation.id)
+        const updatedConversation = normalizedData.find((conv) => conv.id === selectedConversation.id)
         if (updatedConversation) {
           setSelectedConversation(updatedConversation)
         }
@@ -270,24 +293,13 @@ export default function AdminMessagingPage() {
         throw new Error("Erreur lors du chargement des messages")
       }
 
-      let data = await response.json()
+      const data = await response.json()
+      console.log("Messages reçus:", data)
 
-      if (!Array.isArray(data)) {
-        console.error("La réponse n'est pas un tableau:", data)
-        // Si c'est un objet avec une propriété contenant les données
-        if (data && typeof data === "object") {
-          const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
-          if (possibleArrayProps.length > 0) {
-            data = data[possibleArrayProps[0]]
-          } else {
-            data = []
-          }
-        } else {
-          data = []
-        }
-      }
+      // Normaliser les données si nécessaire
+      const normalizedData = Array.isArray(data) ? data : []
 
-      setMessages(data)
+      setMessages(normalizedData)
 
       // Mettre à jour le compteur de messages non lus
       fetchUnreadCount()
@@ -448,16 +460,31 @@ export default function AdminMessagingPage() {
       .toUpperCase()
   }
 
-  // Fonction pour obtenir l'agent dans une conversation
-  const getAgentFromConversation = (conversation: Conversation) => {
-    // Trouver le participant qui est un agent
-    return conversation.participants.find((p) => p.is_agent) || conversation.participants[0]
+  // Fonction pour obtenir l'autre participant dans une conversation
+  const getOtherParticipant = (conversation: Conversation) => {
+    console.log("Conversation:", conversation)
+
+    // Si l'utilisateur courant n'est pas défini, retourner un utilisateur par défaut
+    if (!currentUser) {
+      console.error("Utilisateur courant non défini")
+      return { id: 0, username: "Utilisateur inconnu" }
+    }
+
+    // Trouver le participant qui n'est PAS l'utilisateur courant
+    const otherParticipant = conversation.participants.find((p) => p.id !== currentUser.id)
+    if (otherParticipant) {
+      console.log("Autre participant trouvé:", otherParticipant)
+      return otherParticipant
+    }
+
+    // Si aucun autre participant n'est trouvé, retourner le premier participant
+    return conversation.participants[0] || { id: 0, username: "Utilisateur inconnu" }
   }
 
   // Filter conversations based on search term and active tab
   const filteredConversations = conversations.filter((conversation) => {
-    const agent = getAgentFromConversation(conversation)
-    const matchesSearch = agent.username.toLowerCase().includes(searchTerm.toLowerCase())
+    const otherParticipant = getOtherParticipant(conversation)
+    const matchesSearch = otherParticipant.username.toLowerCase().includes(searchTerm.toLowerCase())
 
     if (activeTab === "unread") {
       return matchesSearch && conversation.unread_count > 0
@@ -468,6 +495,12 @@ export default function AdminMessagingPage() {
 
   // Filter users for the new conversation tab based on search term
   const filteredUsers = users.filter((user) => user.username.toLowerCase().includes(searchTerm.toLowerCase()))
+
+  // Fonction pour déterminer si un message est de l'utilisateur courant
+  const isMessageFromCurrentUser = (message: Message) => {
+    if (!currentUser) return false
+    return message.sender.id === currentUser.id
+  }
 
   return (
     <div className="p-6 min-h-screen bg-gray-200">
@@ -575,7 +608,7 @@ export default function AdminMessagingPage() {
                       ) : (
                         // Afficher les conversations avec le nom du destinataire
                         filteredConversations.map((conversation) => {
-                          const agent = getAgentFromConversation(conversation)
+                          const otherParticipant = getOtherParticipant(conversation)
 
                           return (
                             <motion.div
@@ -594,12 +627,12 @@ export default function AdminMessagingPage() {
                               <div className="flex items-center space-x-3">
                                 <Avatar>
                                   <AvatarFallback className="bg-green-200 text-green-700">
-                                    {getInitials(agent.username)}
+                                    {getInitials(otherParticipant.username)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex justify-between items-center">
-                                    <p className="font-medium truncate">{agent.username}</p>
+                                    <p className="font-medium truncate">{otherParticipant.username}</p>
                                     {conversation.last_message && (
                                       <p className="text-xs text-gray-500">
                                         {formatMessageTime(conversation.last_message.created_at)}
@@ -635,7 +668,7 @@ export default function AdminMessagingPage() {
                         </div>
                       ) : (
                         filteredConversations.map((conversation) => {
-                          const agent = getAgentFromConversation(conversation)
+                          const otherParticipant = getOtherParticipant(conversation)
 
                           return (
                             <motion.div
@@ -649,12 +682,12 @@ export default function AdminMessagingPage() {
                               <div className="flex items-center space-x-3">
                                 <Avatar>
                                   <AvatarFallback className="bg-green-200 text-green-700">
-                                    {getInitials(agent.username)}
+                                    {getInitials(otherParticipant.username)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex justify-between items-center">
-                                    <p className="font-medium truncate">{agent.username}</p>
+                                    <p className="font-medium truncate">{otherParticipant.username}</p>
                                     <Badge className="bg-green-500 text-white ml-2">{conversation.unread_count}</Badge>
                                   </div>
                                   <p className="text-sm text-gray-500 truncate">
@@ -742,13 +775,13 @@ export default function AdminMessagingPage() {
                     <div className="flex items-center space-x-3">
                       <Avatar>
                         <AvatarFallback className="bg-green-200 text-green-700">
-                          {getInitials(getAgentFromConversation(selectedConversation).username)}
+                          {getInitials(getOtherParticipant(selectedConversation).username)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{getAgentFromConversation(selectedConversation).username}</p>
+                        <p className="font-medium">{getOtherParticipant(selectedConversation).username}</p>
                         <p className="text-xs text-gray-500">
-                          {getAgentFromConversation(selectedConversation).email || "Aucun email"}
+                          {getOtherParticipant(selectedConversation).email || "Aucun email"}
                         </p>
                       </div>
                     </div>
@@ -778,38 +811,40 @@ export default function AdminMessagingPage() {
                     ) : (
                       <div className="space-y-4">
                         {messages.map((message) => {
-                          // Simplifier la logique pour déterminer si le message est de l'admin
-                          // Dans l'interface admin, nous considérons que les messages non envoyés par l'agent sélectionné sont de l'admin
-                          const agent = getAgentFromConversation(selectedConversation)
-                          const isFromAdmin = message.sender.id !== agent.id
+                          // Utiliser la fonction pour déterminer si le message est de l'utilisateur courant
+                          const isFromCurrentUser = isMessageFromCurrentUser(message)
 
                           return (
                             <motion.div
                               key={message.id}
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className={`flex ${isFromAdmin ? "justify-end" : "justify-start"}`}
+                              className={`flex ${isFromCurrentUser ? "justify-end" : "justify-start"}`}
                             >
                               <div className="flex items-end gap-2 max-w-[80%]">
-                                {!isFromAdmin && (
+                                {!isFromCurrentUser && (
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback className="bg-green-200 text-green-700 text-xs">
-                                      {getInitials(agent.username)}
+                                      {getInitials(message.sender.username)}
                                     </AvatarFallback>
                                   </Avatar>
                                 )}
                                 <div
                                   className={`p-3 rounded-lg ${
-                                    isFromAdmin ? "bg-green-600 text-white" : "bg-gray-100 text-gray-800"
+                                    isFromCurrentUser ? "bg-green-600 text-white" : "bg-gray-100 text-gray-800"
                                   }`}
                                 >
                                   <p className="text-sm">{message.content}</p>
-                                  <p className={`text-xs mt-1 ${isFromAdmin ? "text-green-100" : "text-gray-500"}`}>
+                                  <p
+                                    className={`text-xs mt-1 ${isFromCurrentUser ? "text-green-100" : "text-gray-500"}`}
+                                  >
                                     {formatMessageTime(message.created_at)}
-                                    {!isFromAdmin && !message.is_read && <span className="ml-2 italic">Non lu</span>}
+                                    {!isFromCurrentUser && !message.is_read && (
+                                      <span className="ml-2 italic">Non lu</span>
+                                    )}
                                   </p>
                                 </div>
-                                {isFromAdmin && (
+                                {isFromCurrentUser && (
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback className="bg-green-700 text-white text-xs">
                                       {getInitials("Moi")}
