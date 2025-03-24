@@ -449,7 +449,7 @@ export default function AdminMessagingPage() {
   }
 
   // Fonction pour obtenir l'agent dans une conversation
-  const getOtherParticipant = (conversation: Conversation) => {
+  const getAgentFromConversation = (conversation: Conversation) => {
     // Trouver le participant qui est un agent
     return conversation.participants.find((p) => p.is_agent) || conversation.participants[0]
   }
