@@ -288,7 +288,6 @@ export default function AdminMessagingPage() {
       }
 
       setMessages(data)
-          setAdminUser(adminMessage.sender)
       }
 
       // Mettre à jour le compteur de messages non lus
