@@ -454,7 +454,6 @@ export default function AdminMessagingPage() {
     return conversation.participants.find((p) => p.is_agent) || conversation.participants[0]
   }
 
-  // Fonction pour déterminer si un message est de l'utilisateur actuel (admin)
   const isMessageFromAdmin = (message: Message) => {
     if (adminUser) {
       return message.sender.id === adminUser.id
