@@ -291,7 +291,6 @@ export default function AdminMessagingPage() {
 
       // Identifier l'utilisateur admin à partir des messages
       if (data.length > 0) {
-        // Trouver un message envoyé par un admin
         const adminMessage = data.find((msg: { sender: { is_agent: any } }) => !msg.sender.is_agent)
         if (adminMessage) {
           setAdminUser(adminMessage.sender)
