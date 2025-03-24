@@ -31,6 +31,10 @@ interface User {
 interface Message {
   id: number
   sender: User
+  sender_id?: number
+  sender_name?: string
+  receiver_id?: number
+  receiver_name?: string
   content: string
   is_read: boolean
   created_at: string
@@ -38,7 +42,9 @@ interface Message {
 
 interface Conversation {
   id: number
-  participants: User[]
+  participants?: User[]
+  participant1?: User
+  participant2?: User
   created_at: string
   updated_at: string
   last_message?: {
@@ -63,8 +69,38 @@ export default function AgentMessagingPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  // Modifier la fonction fetchConversations pour inclure une fonction fetchUsers
   const [users, setUsers] = useState<User[]>([])
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+
+  // Récupérer l'utilisateur courant
+  const fetchCurrentUser = async () => {
+    try {
+      const accessToken = await getAccessToken()
+      if (!accessToken) {
+        handleAuthError()
+        return
+      }
+
+      const response = await fetch(`${apiUrl}/messaging/current-user/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          handleAuthError()
+          return
+        }
+        console.error("Erreur lors du chargement de l'utilisateur courant:", response.status)
+        return
+      }
+
+      const data = await response.json()
+      console.log("Utilisateur courant:", data)
+      setCurrentUser(data)
+    } catch (error) {
+      console.error("Erreur lors du chargement de l'utilisateur courant:", error)
+    }
+  }
 
   // Ajouter cette fonction pour récupérer tous les utilisateurs
   const fetchUsers = async () => {
@@ -76,7 +112,7 @@ export default function AgentMessagingPage() {
       }
 
       // Récupérer tous les utilisateurs (agents et admins)
-      const response = await fetch(`${apiUrl}/accounts/agents/`, {
+      const response = await fetch(`${apiUrl}/messaging/users/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
 
@@ -89,6 +125,7 @@ export default function AgentMessagingPage() {
       }
 
       const data = await response.json()
+      console.log("Utilisateurs récupérés:", data)
 
       // Format the data properly
       const formattedUsers = Array.isArray(data)
@@ -111,6 +148,7 @@ export default function AgentMessagingPage() {
   }
 
   useEffect(() => {
+    fetchCurrentUser()
     fetchConversations()
     fetchUnreadCount()
     fetchUsers()
@@ -181,28 +219,39 @@ export default function AgentMessagingPage() {
         throw new Error("Erreur lors du chargement des conversations")
       }
 
-      let data = await response.json()
+      const data = await response.json()
+      console.log("Données de conversations reçues (agent):", data)
 
-      if (!Array.isArray(data)) {
-        console.error("La réponse n'est pas un tableau:", data)
+      // Normaliser les données
+      let normalizedData = []
+
+      if (Array.isArray(data)) {
+        normalizedData = data
+      } else if (data && typeof data === "object") {
         // Si c'est un objet avec une propriété contenant les données
-        if (data && typeof data === "object") {
-          const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
-          if (possibleArrayProps.length > 0) {
-            data = data[possibleArrayProps[0]]
-          } else {
-            data = []
-          }
-        } else {
-          data = []
+        const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
+        if (possibleArrayProps.length > 0) {
+          normalizedData = data[possibleArrayProps[0]]
         }
+
+        // Si l'API renvoie un format différent, adapter ici
+        // Par exemple, si l'API renvoie { participant1, participant2 } au lieu de participants[]
+        normalizedData = normalizedData.map((conv: { participants: any; participant1: any; participant2: any }) => {
+          if (!conv.participants && (conv.participant1 || conv.participant2)) {
+            return {
+              ...conv,
+              participants: [conv.participant1, conv.participant2].filter(Boolean), // Filtrer les valeurs null/undefined
+            }
+          }
+          return conv
+        })
       }
 
-      setConversations(data)
+      setConversations(normalizedData)
 
       // Si une conversation est sélectionnée, mettre à jour ses données
       if (selectedConversation) {
-        const updatedConversation = data.find((conv: { id: number }) => conv.id === selectedConversation.id)
+        const updatedConversation = normalizedData.find((conv: { id: number }) => conv.id === selectedConversation.id)
         if (updatedConversation) {
           setSelectedConversation(updatedConversation)
         }
@@ -271,24 +320,39 @@ export default function AgentMessagingPage() {
         throw new Error("Erreur lors du chargement des messages")
       }
 
-      let data = await response.json()
+      const data = await response.json()
+      console.log("Messages reçus (agent):", data)
 
-      if (!Array.isArray(data)) {
-        console.error("La réponse n'est pas un tableau:", data)
+      // Normaliser les données
+      let normalizedData = []
+
+      if (Array.isArray(data)) {
+        normalizedData = data
+      } else if (data && typeof data === "object") {
         // Si c'est un objet avec une propriété contenant les données
-        if (data && typeof data === "object") {
-          const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
-          if (possibleArrayProps.length > 0) {
-            data = data[possibleArrayProps[0]]
-          } else {
-            data = []
-          }
-        } else {
-          data = []
+        const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
+        if (possibleArrayProps.length > 0) {
+          normalizedData = data[possibleArrayProps[0]]
         }
       }
 
-      setMessages(data)
+      // Adapter les messages si nécessaire
+      normalizedData = normalizedData.map((msg: { sender: any; sender_id: any; sender_name: any }) => {
+        // Si le message n'a pas d'objet sender mais a un sender_id et sender_name
+        if (!msg.sender && msg.sender_id) {
+          return {
+            ...msg,
+            sender: {
+              id: msg.sender_id,
+              username: msg.sender_name || `Utilisateur ${msg.sender_id}`,
+              is_staff: false, // Par défaut, on suppose que ce n'est pas un admin
+            },
+          }
+        }
+        return msg
+      })
+
+      setMessages(normalizedData)
 
       // Mettre à jour le compteur de messages non lus
       fetchUnreadCount()
@@ -391,20 +455,46 @@ export default function AgentMessagingPage() {
       .toUpperCase()
   }
 
-  // Modifier l'affichage des participants dans les conversations pour montrer leur rôle
-  const getParticipantInfo = (conversation: Conversation) => {
-    // Trouver le participant qui n'est pas l'utilisateur actuel
-    const otherParticipant = conversation.participants[0]
-    return {
-      ...otherParticipant,
-      roleLabel: otherParticipant.is_staff ? "Administrateur" : otherParticipant.is_agent ? "Agent" : "Utilisateur",
+  // Fonction pour obtenir l'autre participant dans une conversation
+  const getOtherParticipant = (conversation: Conversation) => {
+    console.log("Conversation:", conversation)
+
+    // Si l'utilisateur courant n'est pas défini, retourner un utilisateur par défaut
+    if (!currentUser) {
+      console.error("Utilisateur courant non défini")
+      return { id: 0, username: "Utilisateur inconnu" }
     }
+
+    // Vérifier si participants existe et est un tableau
+    if (conversation.participants && Array.isArray(conversation.participants)) {
+      console.log("Conversation participants (agent):", conversation.participants)
+      // Trouver le participant qui n'est PAS l'utilisateur courant
+      const otherParticipant = conversation.participants.find((p) => p.id !== currentUser.id)
+      if (otherParticipant) {
+        console.log("Autre participant trouvé:", otherParticipant)
+        return otherParticipant
+      }
+      // Si aucun autre participant n'est trouvé, retourner le premier participant
+      return conversation.participants[0]
+    }
+    // Si participants n'existe pas, vérifier participant1 et participant2
+    else if (conversation.participant1 && conversation.participant2) {
+      // Déterminer lequel des deux n'est pas l'utilisateur courant
+      if (conversation.participant1.id === currentUser.id) {
+        return conversation.participant2
+      } else {
+        return conversation.participant1
+      }
+    }
+
+    console.error("Aucun participant trouvé dans la conversation")
+    return { id: 0, username: "Utilisateur inconnu" }
   }
 
   // Filter conversations based on search term
   const filteredConversations = conversations.filter((conversation) => {
-    const participant = getParticipantInfo(conversation)
-    return participant.username.toLowerCase().includes(searchTerm.toLowerCase())
+    const otherParticipant = getOtherParticipant(conversation)
+    return otherParticipant.username.toLowerCase().includes(searchTerm.toLowerCase())
   })
 
   // Ajouter une fonction pour créer une nouvelle conversation
@@ -453,7 +543,14 @@ export default function AgentMessagingPage() {
   // Ajouter une fonction pour démarrer une nouvelle conversation
   const startNewConversation = async (user: User) => {
     // Vérifier si une conversation existe déjà avec cet utilisateur
-    const existingConversation = conversations.find((conv) => conv.participants.some((p) => p.id === user.id))
+    const existingConversation = conversations.find((conv) => {
+      if (conv.participants) {
+        return conv.participants.some((p) => p.id === user.id)
+      } else if (conv.participant1 && conv.participant2) {
+        return conv.participant1.id === user.id || conv.participant2.id === user.id
+      }
+      return false
+    })
 
     if (existingConversation) {
       setSelectedConversation(existingConversation)
@@ -467,12 +564,10 @@ export default function AgentMessagingPage() {
     }
   }
 
-  // Fonction pour obtenir l'autre participant de la conversation
-  const getOtherParticipant = (conversation: Conversation | null) => {
-    if (!conversation) return { username: "Inconnu", is_staff: false, is_agent: false, email: "" }
-    // Find the participant who is not the current user (agent)
-    // This ensures we always show the recipient's info, not the sender's
-    return conversation.participants[0]
+  // Fonction pour déterminer si un message est de l'utilisateur courant
+  const isMessageFromCurrentUser = (message: Message) => {
+    if (!currentUser) return false
+    return message.sender.id === currentUser.id
   }
 
   return (
@@ -562,9 +657,9 @@ export default function AgentMessagingPage() {
                       <p className="text-sm text-gray-500">Les administrateurs pourront vous contacter ici.</p>
                     </div>
                   ) : (
-                    // Utiliser getParticipantInfo dans l'affichage des conversations
+                    // Afficher les conversations avec le nom de l'administrateur
                     filteredConversations.map((conversation) => {
-                      const participant = getParticipantInfo(conversation)
+                      const otherParticipant = getOtherParticipant(conversation)
 
                       return (
                         <motion.div
@@ -582,23 +677,13 @@ export default function AgentMessagingPage() {
                         >
                           <div className="flex items-center space-x-3">
                             <Avatar>
-                              <AvatarFallback
-                                className={`${participant.is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"}`}
-                              >
-                                {getInitials(participant.username)}
+                              <AvatarFallback className="bg-green-200 text-green-700">
+                                {getInitials(otherParticipant.username)}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-center">
-                                <div className="flex items-center">
-                                  <p className="font-medium truncate">{participant.username}</p>
-                                  <Badge
-                                    className="ml-2 text-xs"
-                                    variant={participant.is_staff ? "default" : "outline"}
-                                  >
-                                    {participant.roleLabel}
-                                  </Badge>
-                                </div>
+                                <p className="font-medium truncate">{otherParticipant.username}</p>
                                 {conversation.last_message && (
                                   <p className="text-xs text-gray-500">
                                     {formatMessageTime(conversation.last_message.created_at)}
@@ -697,22 +782,12 @@ export default function AgentMessagingPage() {
                   <div className="p-4 border-b border-green-100 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <Avatar>
-                        <AvatarFallback
-                          className={`${getOtherParticipant(selectedConversation).is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"}`}
-                        >
+                        <AvatarFallback className="bg-green-200 text-green-700">
                           {getInitials(getOtherParticipant(selectedConversation).username)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="flex items-center">
-                          <p className="font-medium">{getOtherParticipant(selectedConversation).username}</p>
-                          <Badge
-                            className="ml-2 text-xs"
-                            variant={getOtherParticipant(selectedConversation).is_staff ? "default" : "outline"}
-                          >
-                            {getOtherParticipant(selectedConversation).is_staff ? "Administrateur" : "Agent"}
-                          </Badge>
-                        </div>
+                        <p className="font-medium">{getOtherParticipant(selectedConversation).username}</p>
                         <p className="text-xs text-gray-500">
                           {getOtherParticipant(selectedConversation).email || "Aucun email"}
                         </p>
@@ -744,42 +819,42 @@ export default function AgentMessagingPage() {
                     ) : (
                       <div className="space-y-4">
                         {messages.map((message) => {
-                          const isCurrentUser = message.sender.id !== getParticipantInfo(selectedConversation).id
-                          const otherParticipant = getOtherParticipant(selectedConversation)
+                          // Utiliser la fonction pour déterminer si le message est de l'utilisateur courant
+                          const isFromCurrentUser = isMessageFromCurrentUser(message)
 
                           return (
                             <motion.div
                               key={message.id}
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                              className={`flex ${isFromCurrentUser ? "justify-end" : "justify-start"}`}
                             >
                               <div className="flex items-end gap-2 max-w-[80%]">
-                                {!isCurrentUser && (
+                                {!isFromCurrentUser && (
                                   <Avatar className="h-8 w-8">
-                                    <AvatarFallback
-                                      className={`${otherParticipant.is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"} text-xs`}
-                                    >
-                                      {getInitials(otherParticipant.username)}
+                                    <AvatarFallback className="bg-green-200 text-green-700 text-xs">
+                                      {getInitials(message.sender.username)}
                                     </AvatarFallback>
                                   </Avatar>
                                 )}
                                 <div
                                   className={`p-3 rounded-lg ${
-                                    isCurrentUser ? "bg-green-600 text-white" : "bg-gray-100 text-gray-800"
+                                    isFromCurrentUser ? "bg-green-600 text-white" : "bg-gray-100 text-gray-800"
                                   }`}
                                 >
                                   <p className="text-sm">{message.content}</p>
-                                  <p className={`text-xs mt-1 ${isCurrentUser ? "text-green-100" : "text-gray-500"}`}>
+                                  <p
+                                    className={`text-xs mt-1 ${isFromCurrentUser ? "text-green-100" : "text-gray-500"}`}
+                                  >
                                     {formatMessageTime(message.created_at)}
-                                    {!isCurrentUser && !message.is_read && <span className="ml-2 italic">Non lu</span>}
+                                    {!isFromCurrentUser && !message.is_read && (
+                                      <span className="ml-2 italic">Non lu</span>
+                                    )}
                                   </p>
                                 </div>
-                                {isCurrentUser && (
+                                {isFromCurrentUser && (
                                   <Avatar className="h-8 w-8">
-                                    <AvatarFallback
-                                      className={`${message.sender.is_agent ? "bg-green-200 text-green-700" : "bg-green-700 text-white"} text-xs`}
-                                    >
+                                    <AvatarFallback className="bg-green-200 text-green-700 text-xs">
                                       {getInitials("Moi")}
                                     </AvatarFallback>
                                   </Avatar>
