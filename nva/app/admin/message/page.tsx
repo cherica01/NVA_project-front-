@@ -454,19 +454,10 @@ export default function AdminMessagingPage() {
     return conversation.participants.find((p) => p.is_agent) || conversation.participants[0]
   }
 
-  const isMessageFromAdmin = (message: Message) => {
-    if (adminUser) {
-      return message.sender.id === adminUser.id
-    }
-
-    // Sinon, on suppose que les messages non envoyés par un agent sont de l'admin
-    return !message.sender.is_agent
-  }
-
   // Filter conversations based on search term and active tab
   const filteredConversations = conversations.filter((conversation) => {
-    const otherParticipant = getOtherParticipant(conversation)
-    const matchesSearch = otherParticipant.username.toLowerCase().includes(searchTerm.toLowerCase())
+    const agent = getAgentFromConversation(conversation)
+    const matchesSearch = agent.username.toLowerCase().includes(searchTerm.toLowerCase())
 
     if (activeTab === "unread") {
       return matchesSearch && conversation.unread_count > 0
@@ -584,7 +575,7 @@ export default function AdminMessagingPage() {
                       ) : (
                         // Afficher les conversations avec le nom du destinataire
                         filteredConversations.map((conversation) => {
-                          const otherParticipant = getOtherParticipant(conversation)
+                          const agent = getAgentFromConversation(conversation)
 
                           return (
                             <motion.div
@@ -603,12 +594,12 @@ export default function AdminMessagingPage() {
                               <div className="flex items-center space-x-3">
                                 <Avatar>
                                   <AvatarFallback className="bg-green-200 text-green-700">
-                                    {getInitials(otherParticipant.username)}
+                                    {getInitials(agent.username)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex justify-between items-center">
-                                    <p className="font-medium truncate">{otherParticipant.username}</p>
+                                    <p className="font-medium truncate">{agent.username}</p>
                                     {conversation.last_message && (
                                       <p className="text-xs text-gray-500">
                                         {formatMessageTime(conversation.last_message.created_at)}
@@ -644,7 +635,7 @@ export default function AdminMessagingPage() {
                         </div>
                       ) : (
                         filteredConversations.map((conversation) => {
-                          const otherParticipant = getOtherParticipant(conversation)
+                          const agent = getAgentFromConversation(conversation)
 
                           return (
                             <motion.div
@@ -658,12 +649,12 @@ export default function AdminMessagingPage() {
                               <div className="flex items-center space-x-3">
                                 <Avatar>
                                   <AvatarFallback className="bg-green-200 text-green-700">
-                                    {getInitials(otherParticipant.username)}
+                                    {getInitials(agent.username)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex justify-between items-center">
-                                    <p className="font-medium truncate">{otherParticipant.username}</p>
+                                    <p className="font-medium truncate">{agent.username}</p>
                                     <Badge className="bg-green-500 text-white ml-2">{conversation.unread_count}</Badge>
                                   </div>
                                   <p className="text-sm text-gray-500 truncate">
@@ -751,13 +742,13 @@ export default function AdminMessagingPage() {
                     <div className="flex items-center space-x-3">
                       <Avatar>
                         <AvatarFallback className="bg-green-200 text-green-700">
-                          {getInitials(getOtherParticipant(selectedConversation).username)}
+                          {getInitials(getAgentFromConversation(selectedConversation).username)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{getOtherParticipant(selectedConversation).username}</p>
+                        <p className="font-medium">{getAgentFromConversation(selectedConversation).username}</p>
                         <p className="text-xs text-gray-500">
-                          {getOtherParticipant(selectedConversation).email || "Aucun email"}
+                          {getAgentFromConversation(selectedConversation).email || "Aucun email"}
                         </p>
                       </div>
                     </div>
@@ -787,37 +778,38 @@ export default function AdminMessagingPage() {
                     ) : (
                       <div className="space-y-4">
                         {messages.map((message) => {
-                          // Déterminer si le message est de l'utilisateur actuel (admin)
-                          const isCurrentUser = isMessageFromAdmin(message)
-                          const otherParticipant = getOtherParticipant(selectedConversation)
+                          // Simplifier la logique pour déterminer si le message est de l'admin
+                          // Dans l'interface admin, nous considérons que les messages non envoyés par l'agent sélectionné sont de l'admin
+                          const agent = getAgentFromConversation(selectedConversation)
+                          const isFromAdmin = message.sender.id !== agent.id
 
                           return (
                             <motion.div
                               key={message.id}
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                              className={`flex ${isFromAdmin ? "justify-end" : "justify-start"}`}
                             >
                               <div className="flex items-end gap-2 max-w-[80%]">
-                                {!isCurrentUser && (
+                                {!isFromAdmin && (
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback className="bg-green-200 text-green-700 text-xs">
-                                      {getInitials(otherParticipant.username)}
+                                      {getInitials(agent.username)}
                                     </AvatarFallback>
                                   </Avatar>
                                 )}
                                 <div
                                   className={`p-3 rounded-lg ${
-                                    isCurrentUser ? "bg-green-600 text-white" : "bg-gray-100 text-gray-800"
+                                    isFromAdmin ? "bg-green-600 text-white" : "bg-gray-100 text-gray-800"
                                   }`}
                                 >
                                   <p className="text-sm">{message.content}</p>
-                                  <p className={`text-xs mt-1 ${isCurrentUser ? "text-green-100" : "text-gray-500"}`}>
+                                  <p className={`text-xs mt-1 ${isFromAdmin ? "text-green-100" : "text-gray-500"}`}>
                                     {formatMessageTime(message.created_at)}
-                                    {!isCurrentUser && !message.is_read && <span className="ml-2 italic">Non lu</span>}
+                                    {!isFromAdmin && !message.is_read && <span className="ml-2 italic">Non lu</span>}
                                   </p>
                                 </div>
-                                {isCurrentUser && (
+                                {isFromAdmin && (
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback className="bg-green-700 text-white text-xs">
                                       {getInitials("Moi")}
