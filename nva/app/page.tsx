@@ -25,6 +25,7 @@ export default function Login() {
 
   // S'assurer que le composant est monté pour éviter les valeurs aléatoires en SSR
   useEffect(() => {
+    setMounted(true)
     const savedUsername = localStorage.getItem("nva_username")
     const savedRememberMe = localStorage.getItem("nva_remember_me") === "true"
     if (savedUsername && savedRememberMe) {
