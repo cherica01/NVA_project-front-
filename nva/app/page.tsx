@@ -1,6 +1,6 @@
 "use client"
 
-import { apiUrl } from "../util/config"
+import type React from "react"
 import { setCookies } from "../util/biscuit"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
