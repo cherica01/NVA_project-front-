@@ -23,6 +23,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false)
   const router = useRouter()
 
+  // S'assurer que le composant est monté pour éviter les valeurs aléatoires en SSR
   useEffect(() => {
     const savedUsername = localStorage.getItem("nva_username")
     const savedRememberMe = localStorage.getItem("nva_remember_me") === "true"
