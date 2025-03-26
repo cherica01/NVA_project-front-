@@ -26,6 +26,7 @@ export default function Login() {
   useEffect(() => {
     const savedUsername = localStorage.getItem("nva_username")
     const savedRememberMe = localStorage.getItem("nva_remember_me") === "true"
+    }
   }, [])
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
