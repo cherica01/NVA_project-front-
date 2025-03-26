@@ -24,6 +24,7 @@ export default function Login() {
   const router = useRouter()
 
   useEffect(() => {
+    const savedRememberMe = localStorage.getItem("nva_remember_me") === "true"
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
