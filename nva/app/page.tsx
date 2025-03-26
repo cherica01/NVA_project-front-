@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { apiUrl } from "@/util/config"
-import { useState } from "react"
+import { setCookies } from "@/util/biscuit"
 import { useRouter } from "next/navigation"
 import { UserIcon, LockOpenIcon as LockClosedIcon, ArrowRightIcon, EyeIcon, EyeOffIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
