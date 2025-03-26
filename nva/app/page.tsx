@@ -22,6 +22,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
 
+  useEffect(() => {
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
