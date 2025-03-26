@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { setCookies } from "../util/biscuit"
+import { apiUrl } from "@/util/config"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { UserIcon, LockOpenIcon as LockClosedIcon, ArrowRightIcon } from "lucide-react"
