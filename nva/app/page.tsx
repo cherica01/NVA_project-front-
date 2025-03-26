@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 
 export default function Login() {
+  const [mounted, setMounted] = useState(false)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
