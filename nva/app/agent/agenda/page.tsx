@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Info, Check, X, BarChart } from "lucide-react"
 import { apiUrl } from "@/util/config"
 import { getAccessToken } from "@/util/biscuit"
-import EventDetailDialog from "./components/event-detail-dialog"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface Event {
   id: number
