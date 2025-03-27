@@ -46,7 +46,7 @@ export default function AgentAgendaPage() {
   const [monthData, setMonthData] = useState<MonthData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [selectedDay, setSelectedDay] = useState<Day | null>(null)
   const [showEventDetail, setShowEventDetail] = useState(false)
   const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false)
