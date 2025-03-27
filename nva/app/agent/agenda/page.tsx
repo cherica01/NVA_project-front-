@@ -14,7 +14,6 @@ import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Info, Check, X, Bar
 import { apiUrl } from "@/util/config"
 import { getAccessToken } from "@/util/biscuit"
 import EventDetailDialog from "./components/event-detail-dialog"
-import PreferencesDialog from "./components/preferences-dialog"
 
 interface Event {
   id: number
