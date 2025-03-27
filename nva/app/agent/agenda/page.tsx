@@ -14,7 +14,6 @@ import { motion } from "framer-motion"
 import { apiUrl } from "@/util/config"
 import { getAccessToken } from "@/util/biscuit"
 import EventDetailDialog from "./components/event-detail-dialog"
-import AvailabilityDialog from "./components/availability-dialog"
 import PreferencesDialog from "./components/preferences-dialog"
 
 interface Event {
