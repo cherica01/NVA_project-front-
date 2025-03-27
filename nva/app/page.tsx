@@ -34,7 +34,7 @@ export default function Login() {
   }, [])
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
     setLoading(true);
     setError("");
     setSuccess("");
