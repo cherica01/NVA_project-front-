@@ -55,6 +55,7 @@ export default function AgentAgendaPage() {
   useEffect(() => {
     fetchMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1)
   }, [currentDate])
+  useEffect(() => {
 
   const fetchMonthData = async (year: number, month: number) => {
     setLoading(true)
