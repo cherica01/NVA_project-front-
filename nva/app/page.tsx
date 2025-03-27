@@ -29,6 +29,7 @@ export default function Login() {
     const savedUsername = localStorage.getItem("nva_username")
     const savedRememberMe = localStorage.getItem("nva_remember_me") === "true"
     if (savedUsername && savedRememberMe) {
+      setUsername(savedUsername)
       setRememberMe(true)
     }
   }, [])
