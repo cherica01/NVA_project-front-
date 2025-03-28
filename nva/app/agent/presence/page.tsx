@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Progress } from "@/components/ui/progress"
 import {
   MapPin,
+  Camera,
   XCircle,
   RefreshCw,
 import { motion, AnimatePresence } from "framer-motion"
