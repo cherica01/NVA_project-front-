@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import {
+  MapPin,
 import { motion, AnimatePresence } from "framer-motion"
 import { Alert } from "@/app/components/alert"
 import L from "leaflet"
