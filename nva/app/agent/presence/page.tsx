@@ -26,7 +26,7 @@ import { Alert } from "@/app/components/alert"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
-const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false })
+  timestamp: string
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false })
 const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false })
 
