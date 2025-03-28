@@ -18,6 +18,7 @@ import {
   MapPin,
   Camera,
   Clock,
+  CheckCircle,
   XCircle,
   RefreshCw,
 import { motion, AnimatePresence } from "framer-motion"
