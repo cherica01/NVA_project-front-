@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress"
 import {
   MapPin,
   Camera,
+  Clock,
   XCircle,
   RefreshCw,
 import { motion, AnimatePresence } from "framer-motion"
