@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -59,11 +59,33 @@ interface PhotoUpload {
   error?: string
 }
 
-// Fonction utilitaire pour obtenir l'URL complète d'une photo
+// Remplacer la fonction getPhotoUrl par celle-ci:
 const getPhotoUrl = (photoPath: string | null): string => {
   if (!photoPath) return "/placeholder.svg"
+
+  // Si l'URL est déjà complète (commence par http ou https), la retourner telle quelle
   if (photoPath.startsWith("http")) return photoPath
+
+  // Si l'URL commence par /media, il s'agit d'un chemin relatif à la racine du serveur Django
+  if (photoPath.startsWith("/media")) {
+    // Extraire le domaine de l'API URL
+    const apiDomain = (apiUrl ?? "").split("/").slice(0, 3).join("/")
+    return `${apiDomain}${photoPath}`
+  }
+
+  // Sinon, préfixer avec l'URL de l'API complète
   return `${apiUrl}${photoPath}`
+}
+
+// Ajouter cette fonction pour le débogage des URLs
+const logPhotoUrls = (presence: Presence) => {
+  if (presence.photos && presence.photos.length > 0) {
+    console.log("URLs des photos pour la présence", presence.id)
+    presence.photos.forEach((photo, index) => {
+      console.log(`Photo ${index + 1}:`, photo.photo)
+      console.log(`URL transformée:`, getPhotoUrl(photo.photo))
+    })
+  }
 }
 
 export default function AgentPresencePage() {
@@ -82,8 +104,52 @@ export default function AgentPresencePage() {
   const [activeTab, setActiveTab] = useState("submit")
   const [debugInfo, setDebugInfo] = useState<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Ajouter un état pour afficher les URLs brutes pour le débogage
+  const [showRawUrls, setShowRawUrls] = useState(false)
+
+  const handleAuthError = () => {
+    setError("Votre session a expiré. Veuillez vous reconnecter.")
+    router.push("/login")
+  }
 
   useEffect(() => {
+    const fetchPresences = async () => {
+      setLoading(true)
+      try {
+        const accessToken = await getAccessToken()
+        if (!accessToken) {
+          handleAuthError()
+          return
+        }
+
+        const response = await fetch(`${apiUrl}/presence/agent/`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            handleAuthError()
+            return
+          }
+          throw new Error(`Erreur lors du chargement des présences: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log("Présences récupérées:", data)
+
+        // Log des URLs des photos pour le débogage
+        if (data && data.length > 0) {
+          data.forEach((presence: Presence) => logPhotoUrls(presence))
+        }
+
+        setPresences(data)
+      } catch (error) {
+        console.error("Erreur lors du chargement des présences:", error)
+        setError("Impossible de charger vos données de présence")
+      } finally {
+        setLoading(false)
+      }
+    }
     fetchPresences()
     getCurrentLocation()
   }, [])
@@ -97,38 +163,6 @@ export default function AgentPresencePage() {
       return () => clearTimeout(timer)
     }
   }, [success])
-
-  const fetchPresences = async () => {
-    setLoading(true)
-    try {
-      const accessToken = await getAccessToken()
-      if (!accessToken) {
-        handleAuthError()
-        return
-      }
-
-      const response = await fetch(`${apiUrl}/presence/agent/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          handleAuthError()
-          return
-        }
-        throw new Error(`Erreur lors du chargement des présences: ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log("Présences récupérées:", data)
-      setPresences(data)
-    } catch (error) {
-      console.error("Erreur lors du chargement des présences:", error)
-      setError("Impossible de charger vos données de présence")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -382,6 +416,43 @@ export default function AgentPresencePage() {
       setPhotoUploads([])
 
       // Rafraîchir la liste des présences
+      const fetchPresences = async () => {
+        setLoading(true)
+        try {
+          const accessToken = await getAccessToken()
+          if (!accessToken) {
+            handleAuthError()
+            return
+          }
+
+          const response = await fetch(`${apiUrl}/presence/agent/`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
+
+          if (!response.ok) {
+            if (response.status === 401) {
+              handleAuthError()
+              return
+            }
+            throw new Error(`Erreur lors du chargement des présences: ${response.status}`)
+          }
+
+          const data = await response.json()
+          console.log("Présences récupérées:", data)
+
+          // Log des URLs des photos pour le débogage
+          if (data && data.length > 0) {
+            data.forEach((presence: Presence) => logPhotoUrls(presence))
+          }
+
+          setPresences(data)
+        } catch (error) {
+          console.error("Erreur lors du chargement des présences:", error)
+          setError("Impossible de charger vos données de présence")
+        } finally {
+          setLoading(false)
+        }
+      }
       fetchPresences()
 
       setSuccess("Présence soumise avec succès")
@@ -392,11 +463,6 @@ export default function AgentPresencePage() {
     } finally {
       setSubmitting(false)
     }
-  }
-
-  const handleAuthError = () => {
-    setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
   }
 
   const formatDateTime = (dateString: string) => {
@@ -669,7 +735,51 @@ export default function AgentPresencePage() {
               <TabsContent value="history" className="space-y-4">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Historique des présences</h2>
-                  <Button variant="outline" size="sm" onClick={fetchPresences} className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const fetchPresences = async () => {
+                        setLoading(true)
+                        try {
+                          const accessToken = await getAccessToken()
+                          if (!accessToken) {
+                            handleAuthError()
+                            return
+                          }
+
+                          const response = await fetch(`${apiUrl}/presence/agent/`, {
+                            headers: { Authorization: `Bearer ${accessToken}` },
+                          })
+
+                          if (!response.ok) {
+                            if (response.status === 401) {
+                              handleAuthError()
+                              return
+                            }
+                            throw new Error(`Erreur lors du chargement des présences: ${response.status}`)
+                          }
+
+                          const data = await response.json()
+                          console.log("Présences récupérées:", data)
+
+                          // Log des URLs des photos pour le débogage
+                          if (data && data.length > 0) {
+                            data.forEach((presence: Presence) => logPhotoUrls(presence))
+                          }
+
+                          setPresences(data)
+                        } catch (error) {
+                          console.error("Erreur lors du chargement des présences:", error)
+                          setError("Impossible de charger vos données de présence")
+                        } finally {
+                          setLoading(false)
+                        }
+                      }
+                      fetchPresences()
+                    }}
+                    className="flex items-center gap-1"
+                  >
                     <RefreshCw className="h-4 w-4" />
                     Actualiser
                   </Button>
@@ -747,7 +857,14 @@ export default function AgentPresencePage() {
                           </div>
                         </CardContent>
                         <CardFooter className="bg-gray-50 p-3 flex justify-end">
-                          <Button variant="ghost" size="sm" onClick={() => setSelectedPresence(presence)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              logPhotoUrls(presence)
+                              setSelectedPresence(presence)
+                            }}
+                          >
                             Voir les détails
                           </Button>
                         </CardFooter>
@@ -825,19 +942,6 @@ export default function AgentPresencePage() {
         <Dialog open={!!selectedPresence} onOpenChange={(open) => !open && setSelectedPresence(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-xl">Détails de la présence</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-6 py-4">
-              {/* Statut du jour */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Clock className="h-5 w-5 text-gray-500 mr-2" />
-                  <span className="font-medium">{formatDateTime(selectedPresence.timestamp)}</span>
-                </div>
-                {getStatusBadge(selectedPresence.status)}
-              </div>
-
               {/* Emplacement */}
               {selectedPresence.location_name && (
                 <div className="space-y-2">
@@ -884,6 +988,12 @@ export default function AgentPresencePage() {
                           alt="Photo de présence"
                           className="w-full h-auto"
                         />
+                        {showRawUrls && (
+                          <div className="p-2 bg-gray-100 text-xs font-mono break-all">
+                            <p>URL brute: {photo.photo}</p>
+                            <p>URL transformée: {getPhotoUrl(photo.photo)}</p>
+                          </div>
+                        )}
                         <div className="p-2 bg-gray-50 text-xs text-gray-500">
                           Téléchargée le {formatDateTime(photo.uploaded_at)}
                         </div>
@@ -892,9 +1002,12 @@ export default function AgentPresencePage() {
                   </div>
                 </div>
               )}
-            </div>
+            </DialogHeader>
 
-            <DialogFooter>
+            <DialogFooter className="flex justify-between">
+              <Button variant="outline" size="sm" onClick={() => setShowRawUrls(!showRawUrls)} className="text-xs">
+                {showRawUrls ? "Masquer URLs" : "Afficher URLs"}
+              </Button>
               <Button onClick={() => setSelectedPresence(null)} className="bg-green-600 hover:bg-green-700">
                 Fermer
               </Button>
