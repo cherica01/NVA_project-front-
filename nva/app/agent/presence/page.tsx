@@ -58,6 +58,7 @@ interface PhotoUpload {
   status: "pending" | "uploading" | "success" | "error"
   error?: string
 }
+    return !isNaN(parsed)
 
 // Remplacer la fonction getPhotoUrl par celle-ci:
 const getPhotoUrl = (photoPath: string | null): string => {
