@@ -68,6 +68,7 @@ const isValidNumber = (value: any): boolean => {
     return !isNaN(parsed)
   }
 
+  if (!isValidNumber(value)) return "N/A"
 
   const num = typeof value === "string" ? Number.parseFloat(value) : value
 }
