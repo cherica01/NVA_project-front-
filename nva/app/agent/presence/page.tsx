@@ -58,6 +58,7 @@ interface PhotoUpload {
   status: "pending" | "uploading" | "success" | "error"
   error?: string
 }
+const isValidNumber = (value: any): boolean => {
     return !isNaN(parsed)
 
 // Remplacer la fonction getPhotoUrl par celle-ci:
