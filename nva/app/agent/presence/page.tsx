@@ -62,6 +62,7 @@ interface PhotoUpload {
 // Fonction pour vérifier si une valeur est un nombre valide
 const isValidNumber = (value: any): boolean => {
   if (value === null || value === undefined) return false
+  if (typeof value === "number") return !isNaN(value)
   if (typeof value === "string") {
     const parsed = Number.parseFloat(value)
     return !isNaN(parsed)
