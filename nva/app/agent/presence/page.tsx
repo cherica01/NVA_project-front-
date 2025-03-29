@@ -69,6 +69,7 @@ const isValidNumber = (value: any): boolean => {
   }
 
 
+  const num = typeof value === "string" ? Number.parseFloat(value) : value
 }
 
 // Remplacer la fonction getPhotoUrl par celle-ci:
