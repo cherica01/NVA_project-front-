@@ -58,6 +58,7 @@ interface PhotoUpload {
   status: "pending" | "uploading" | "success" | "error"
   error?: string
 }
+// Fonction pour vérifier si une valeur est un nombre valide
 const isValidNumber = (value: any): boolean => {
   if (value === null || value === undefined) return false
     return !isNaN(parsed)
