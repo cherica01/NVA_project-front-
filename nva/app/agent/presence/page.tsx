@@ -67,6 +67,7 @@ const isValidNumber = (value: any): boolean => {
     const parsed = Number.parseFloat(value)
     return !isNaN(parsed)
   }
+
 }
 
 // Remplacer la fonction getPhotoUrl par celle-ci:
