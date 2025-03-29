@@ -59,6 +59,7 @@ interface PhotoUpload {
   error?: string
 }
 const isValidNumber = (value: any): boolean => {
+  if (value === null || value === undefined) return false
     return !isNaN(parsed)
 
 // Remplacer la fonction getPhotoUrl par celle-ci:
