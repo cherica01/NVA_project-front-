@@ -104,6 +104,7 @@ export default function Login() {
           className="absolute inset-0 bg-gradient-to-br from-green-50 to-gray-100"
             background: [
               "linear-gradient(to bottom right, rgba(240, 253, 244, 1), rgba(243, 244, 246, 1))",
+          }}
           transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
         {mounted &&
           Array.from({ length: 15 }).map((_, i) => (
