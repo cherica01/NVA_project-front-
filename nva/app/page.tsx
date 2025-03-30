@@ -100,6 +100,7 @@ export default function Login() {
       {/* Fond animé */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Cercles flottants avec animations renforcées */}
+          transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
         {mounted &&
           Array.from({ length: 15 }).map((_, i) => (
             <motion.div
