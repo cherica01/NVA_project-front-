@@ -100,6 +100,7 @@ export default function Login() {
       {/* Fond avec animations simples et fluides */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Gradient de fond subtil et animé */}
+          className="absolute inset-0 bg-gradient-to-br from-green-50 to-gray-100"
               "linear-gradient(to bottom right, rgba(240, 253, 244, 1), rgba(243, 244, 246, 1))",
           transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
         {mounted &&
