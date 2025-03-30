@@ -111,7 +111,7 @@ export default function Login() {
           transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
 
         {mounted &&
-          Array.from({ length: 15 }).map((_, i) => (
+          Array.from({ length: 6 }).map((_, i) => (
             <motion.div
               key={`circle-${i}`}
               className="absolute rounded-full bg-green-500/10"
