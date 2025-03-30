@@ -106,6 +106,7 @@ export default function Login() {
               "linear-gradient(to bottom right, rgba(240, 253, 244, 1), rgba(243, 244, 246, 1))",
           }}
           transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+
         {mounted &&
           Array.from({ length: 15 }).map((_, i) => (
             <motion.div
