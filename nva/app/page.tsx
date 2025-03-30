@@ -97,7 +97,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden relative">
-      {/* Fond animé */}
+      {/* Fond avec animations simples et fluides */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Cercles flottants avec animations renforcées */}
               "linear-gradient(to bottom right, rgba(240, 253, 244, 1), rgba(243, 244, 246, 1))",
