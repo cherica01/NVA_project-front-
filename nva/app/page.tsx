@@ -102,6 +102,7 @@ export default function Login() {
         {/* Gradient de fond subtil et animé */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-br from-green-50 to-gray-100"
+          animate={{
             background: [
               "linear-gradient(to bottom right, rgba(240, 253, 244, 1), rgba(243, 244, 246, 1))",
             ],
