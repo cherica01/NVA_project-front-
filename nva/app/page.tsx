@@ -110,6 +110,7 @@ export default function Login() {
           }}
           transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
 
+        {/* Cercles flottants avec animation fluide */}
         {mounted &&
           Array.from({ length: 6 }).map((_, i) => (
             <motion.div
