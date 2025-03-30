@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Alert } from "@/app/components/alert"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { User, Calendar, Users, MapPin, Phone, Ruler, Camera, Save } from "lucide-react"
 
 interface AgentProfile {
