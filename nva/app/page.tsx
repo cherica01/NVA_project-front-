@@ -119,7 +119,7 @@ export default function Login() {
                 top: `${Math.random() * 100}%`,
                 left: `${Math.random() * 100}%`,
                 width: `${30 + Math.random() * 100}px`,
-                height: `${30 + Math.random() * 100}px`,
+              }}
                 filter: "blur(3px)",
               }}
               animate={{
