@@ -274,7 +274,7 @@ export default function Dashboard() {
                         ? format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 19), "d MMM", { locale: fr })
                         : format(new Date(new Date().getFullYear(), new Date().getMonth(), 19), "d MMM", { locale: fr })}
                     </div>
-                    <p className="text-xs text-green-500 flex items-center gap-1 mt-1">Chaque 9 du mois</p>
+                    <p className="text-xs text-green-500 flex items-center gap-1 mt-1">Chaque 19 du mois</p>
                   </>
                 )}
               </CardContent>
