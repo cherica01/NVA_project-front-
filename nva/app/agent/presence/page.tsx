@@ -67,8 +67,11 @@ const isValidNumber = (value: any): boolean => {
     const parsed = Number.parseFloat(value)
     return !isNaN(parsed)
   }
+  return false
 }
 
+// Fonction pour formater un nombre avec un nombre spécifique de décimales
+const formatNumber = (value: any, decimals = 6): string => {
   if (!isValidNumber(value)) return "N/A"
 
   const num = typeof value === "string" ? Number.parseFloat(value) : value
@@ -120,8 +123,6 @@ export default function AgentPresencePage() {
   const [activeTab, setActiveTab] = useState("submit")
   const [debugInfo, setDebugInfo] = useState<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  // Ajouter un état pour afficher les URLs brutes pour le débogage
-  const [showRawUrls, setShowRawUrls] = useState(false)
 
   const handleAuthError = () => {
     setError("Votre session a expiré. Veuillez vous reconnecter.")
@@ -584,10 +585,19 @@ export default function AgentPresencePage() {
                               Latitude: {currentLocation.latitude.toFixed(6)}, Longitude:{" "}
                               {currentLocation.longitude.toFixed(6)}
                             </p>
-                            <div className="h-40 bg-gray-200 rounded-md flex items-center justify-center relative overflow-hidden">
+                            <div className="h-40 bg-gray-200 rounded-md relative overflow-hidden">
                               <iframe
-                                src={`https://www.openstreetmap.org/export/embed.html?bbox=${currentLocation.longitude - 0.01}%2C${currentLocation.latitude - 0.01}%2C${currentLocation.longitude + 0.01}%2C${currentLocation.latitude + 0.01}&layer=mapnik&marker=${currentLocation.latitude}%2C${currentLocation.longitude}`}
-                                className="absolute inset-0 w-full h-full border-0"
+                                src={`https://www.openstreetmap.org/export/embed.html?bbox=${currentLocation.longitude - 0.005}%2C${currentLocation.latitude - 0.005}%2C${currentLocation.longitude + 0.005}%2C${currentLocation.latitude + 0.005}&layer=mapnik&marker=${currentLocation.latitude}%2C${currentLocation.longitude}`}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "none",
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
+                                }}
+                                allowFullScreen
+                                loading="eager"
                               ></iframe>
                             </div>
                           </div>
@@ -956,8 +966,21 @@ export default function AgentPresencePage() {
       {/* Dialog pour afficher les détails d'une présence */}
       {selectedPresence && (
         <Dialog open={!!selectedPresence} onOpenChange={(open) => !open && setSelectedPresence(null)}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
+              <DialogTitle className="text-xl">Détails de la présence</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4 overflow-y-auto pr-2">
+              {/* Statut du jour */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Clock className="h-5 w-5 text-gray-500 mr-2" />
+                  <span className="font-medium">{formatDateTime(selectedPresence.timestamp)}</span>
+                </div>
+                {getStatusBadge(selectedPresence.status)}
+              </div>
+
               {/* Emplacement */}
               {selectedPresence.location_name && (
                 <div className="space-y-2">
@@ -967,12 +990,41 @@ export default function AgentPresencePage() {
                   </h3>
                   <p className="text-gray-600">{selectedPresence.location_name}</p>
 
-                  {selectedPresence.latitude && selectedPresence.longitude && (
-                    <div className="h-60 bg-gray-200 rounded-md overflow-hidden mt-2">
-                      <iframe
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedPresence.longitude - 0.01}%2C${selectedPresence.latitude - 0.01}%2C${selectedPresence.longitude + 0.01}%2C${selectedPresence.latitude + 0.01}&layer=mapnik&marker=${selectedPresence.latitude}%2C${selectedPresence.longitude}`}
-                        className="w-full h-full border-0"
-                      ></iframe>
+                  {selectedPresence.latitude !== null && selectedPresence.longitude !== null && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600 mb-2">
+                        Latitude: {formatNumber(selectedPresence.latitude)}, Longitude:{" "}
+                        {formatNumber(selectedPresence.longitude)}
+                      </p>
+                      <div className="h-60 bg-gray-200 rounded-md overflow-hidden relative">
+                        <iframe
+                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(selectedPresence.longitude) - 0.005}%2C${Number(selectedPresence.latitude) - 0.005}%2C${Number(selectedPresence.longitude) + 0.005}%2C${Number(selectedPresence.latitude) + 0.005}&layer=mapnik&marker=${selectedPresence.latitude}%2C${selectedPresence.longitude}`}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            border: "none",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                          }}
+                          allowFullScreen
+                          loading="eager"
+                          onLoad={(e) => {
+                            console.log("Carte chargée dans le dialogue")
+                            // Force un redimensionnement pour aider le rendu
+                            const iframe = e.target as HTMLIFrameElement
+                            if (iframe) {
+                              setTimeout(() => {
+                                const height = iframe.style.height
+                                iframe.style.height = "0px"
+                                setTimeout(() => {
+                                  iframe.style.height = height
+                                }, 10)
+                              }, 100)
+                            }
+                          }}
+                        ></iframe>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1004,12 +1056,6 @@ export default function AgentPresencePage() {
                           alt="Photo de présence"
                           className="w-full h-auto"
                         />
-                        {showRawUrls && (
-                          <div className="p-2 bg-gray-100 text-xs font-mono break-all">
-                            <p>URL brute: {photo.photo}</p>
-                            <p>URL transformée: {getPhotoUrl(photo.photo)}</p>
-                          </div>
-                        )}
                         <div className="p-2 bg-gray-50 text-xs text-gray-500">
                           Téléchargée le {formatDateTime(photo.uploaded_at)}
                         </div>
@@ -1018,12 +1064,9 @@ export default function AgentPresencePage() {
                   </div>
                 </div>
               )}
-            </DialogHeader>
+            </div>
 
-            <DialogFooter className="flex justify-between">
-              <Button variant="outline" size="sm" onClick={() => setShowRawUrls(!showRawUrls)} className="text-xs">
-                {showRawUrls ? "Masquer URLs" : "Afficher URLs"}
-              </Button>
+            <DialogFooter className="mt-2">
               <Button onClick={() => setSelectedPresence(null)} className="bg-green-600 hover:bg-green-700">
                 Fermer
               </Button>
