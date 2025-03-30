@@ -117,7 +117,7 @@ export default function Login() {
               key={`circle-${i}`}
               className="absolute rounded-full bg-green-500/10"
               style={{
-                top: `${Math.random() * 100}%`,
+                width: `${80 + Math.random() * 120}px`,
                 left: `${Math.random() * 100}%`,
                 width: `${30 + Math.random() * 100}px`,
               }}
