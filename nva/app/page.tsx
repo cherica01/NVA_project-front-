@@ -112,7 +112,7 @@ export default function Login() {
           Array.from({ length: 15 }).map((_, i) => (
             <motion.div
               key={`circle-${i}`}
-              className="absolute rounded-full bg-gradient-to-br from-green-400/40 to-green-600/30"
+              className="absolute rounded-full bg-green-500/10"
               style={{
                 top: `${Math.random() * 100}%`,
                 left: `${Math.random() * 100}%`,
