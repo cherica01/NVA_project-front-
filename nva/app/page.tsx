@@ -134,7 +134,7 @@ export default function Login() {
                 opacity: [0.4, 0.9, 0.4],
               }}
               transition={{
-                duration: 20 + Math.random() * 15,
+                duration: 15 + Math.random() * 10,
                 repeat: Number.POSITIVE_INFINITY,
                 ease: "easeInOut",
               }}
