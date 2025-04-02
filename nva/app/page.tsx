@@ -120,7 +120,7 @@ export default function Login() {
               className="absolute rounded-full bg-green-500/10"
               style={{
                 width: `${80 + Math.random() * 120}px`,
-                left: `${Math.random() * 100}%`,
+                height: `${80 + Math.random() * 120}px`,
                 filter: "blur(40px)",
               }}
               initial={{
