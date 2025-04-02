@@ -124,6 +124,7 @@ export default function Login() {
                 width: `${30 + Math.random() * 100}px`,
               }}
                 filter: "blur(3px)",
+                y: `${Math.random() * 100}%`,
                 opacity: 0.3 + Math.random() * 0.4,
               }}
               animate={{
