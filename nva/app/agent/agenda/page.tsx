@@ -54,6 +54,7 @@ export default function AgentAgendaPage() {
   useEffect(() => {
     fetchMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1)
   }, [currentDate])
+
   useEffect(() => {
         setSuccess(null)
 
