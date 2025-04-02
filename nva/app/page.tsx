@@ -137,6 +137,7 @@ export default function Login() {
                 duration: 15 + Math.random() * 10,
                 repeat: Number.POSITIVE_INFINITY,
                 ease: "easeInOut",
+                times: [0, 0.5, 1],
               }}
             />
           ))}
