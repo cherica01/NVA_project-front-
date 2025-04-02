@@ -141,7 +141,7 @@ export default function Login() {
             />
           ))}
 
-        {/* Lignes ondulantes avec plus de visibilité */}
+        {/* Lignes horizontales subtiles */}
         {mounted &&
           Array.from({ length: 5 }).map((_, i) => (
             <motion.div
