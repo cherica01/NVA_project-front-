@@ -130,7 +130,7 @@ export default function Login() {
               animate={{
                 x: [`${Math.random() * 100}%`, `${Math.random() * 100}%`, `${Math.random() * 100}%`],
                 y: [`${Math.random() * 100}%`, `${Math.random() * 100}%`, `${Math.random() * 100}%`],
-                scale: [1, 1.3, 0.8, 1],
+                opacity: [0.3, 0.7, 0.3],
                 opacity: [0.4, 0.9, 0.4],
               }}
               transition={{
