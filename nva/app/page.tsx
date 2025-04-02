@@ -150,7 +150,7 @@ export default function Login() {
               style={{ top: `${20 + i * 15}%` }}
               animate={{
                 opacity: [0.2, 0.5, 0.2],
-                scaleY: [1, 1.7, 0.7, 1],
+                scaleY: [1, 1.5, 1],
                 opacity: [0.3, 0.6, 0.3],
               }}
               transition={{
