@@ -123,7 +123,7 @@ export default function Login() {
                 left: `${Math.random() * 100}%`,
                 filter: "blur(40px)",
               }}
-                filter: "blur(3px)",
+              initial={{
                 y: `${Math.random() * 100}%`,
                 opacity: 0.3 + Math.random() * 0.4,
               }}
