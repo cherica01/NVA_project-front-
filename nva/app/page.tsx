@@ -121,7 +121,7 @@ export default function Login() {
               style={{
                 width: `${80 + Math.random() * 120}px`,
                 left: `${Math.random() * 100}%`,
-                width: `${30 + Math.random() * 100}px`,
+                filter: "blur(40px)",
               }}
                 filter: "blur(3px)",
                 y: `${Math.random() * 100}%`,
