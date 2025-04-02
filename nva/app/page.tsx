@@ -146,7 +146,7 @@ export default function Login() {
           Array.from({ length: 5 }).map((_, i) => (
             <motion.div
               key={`wave-${i}`}
-              className="absolute h-[3px] w-full bg-gradient-to-r from-transparent via-green-500/50 to-transparent"
+              className="absolute h-[1px] w-full bg-gradient-to-r from-transparent via-green-300/30 to-transparent"
               style={{ top: `${20 + i * 15}%` }}
               animate={{
                 opacity: [0.2, 0.5, 0.2],
