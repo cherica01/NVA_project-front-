@@ -150,7 +150,7 @@ export default function Login() {
               className="absolute h-[3px] w-full bg-gradient-to-r from-transparent via-green-500/50 to-transparent"
               style={{ top: `${20 + i * 15}%` }}
               animate={{
-                y: [0, 30, -30, 0],
+                opacity: [0.2, 0.5, 0.2],
                 scaleY: [1, 1.7, 0.7, 1],
                 opacity: [0.3, 0.6, 0.3],
               }}
