@@ -128,7 +128,7 @@ export default function Login() {
                 opacity: 0.3 + Math.random() * 0.4,
               }}
               animate={{
-                y: [Math.random() * 150, Math.random() * -150, Math.random() * 150],
+                x: [`${Math.random() * 100}%`, `${Math.random() * 100}%`, `${Math.random() * 100}%`],
                 y: [`${Math.random() * 100}%`, `${Math.random() * 100}%`, `${Math.random() * 100}%`],
                 scale: [1, 1.3, 0.8, 1],
                 opacity: [0.4, 0.9, 0.4],
