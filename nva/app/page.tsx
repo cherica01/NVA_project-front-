@@ -131,7 +131,6 @@ export default function Login() {
                 x: [`${Math.random() * 100}%`, `${Math.random() * 100}%`, `${Math.random() * 100}%`],
                 y: [`${Math.random() * 100}%`, `${Math.random() * 100}%`, `${Math.random() * 100}%`],
                 opacity: [0.3, 0.7, 0.3],
-                opacity: [0.4, 0.9, 0.4],
               }}
               transition={{
                 duration: 15 + Math.random() * 10,
