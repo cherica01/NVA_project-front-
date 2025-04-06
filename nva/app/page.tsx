@@ -166,7 +166,6 @@ export default function Login() {
         {/* Hexagones futuristes avec opacité renforcée */}
         {mounted &&
             const size = 80 + Math.random() * 120
-            return (
               <motion.div
                 key={`hex-${i}`}
                 className="absolute"
