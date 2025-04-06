@@ -144,7 +144,7 @@ export default function Login() {
 
         {/* Lignes horizontales subtiles */}
         {mounted &&
-          Array.from({ length: 5 }).map((_, i) => (
+          Array.from({ length: 3 }).map((_, i) => (
             <motion.div
               key={`wave-${i}`}
               className="absolute h-[1px] w-full bg-gradient-to-r from-transparent via-green-300/30 to-transparent"
