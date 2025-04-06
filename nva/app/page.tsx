@@ -146,7 +146,7 @@ export default function Login() {
         {mounted &&
           Array.from({ length: 3 }).map((_, i) => (
             <motion.div
-              key={`wave-${i}`}
+              key={`line-${i}`}
               className="absolute h-[1px] w-full bg-gradient-to-r from-transparent via-green-300/30 to-transparent"
               style={{ top: `${20 + i * 15}%` }}
               animate={{
