@@ -165,7 +165,6 @@ export default function Login() {
 
         {/* Hexagones futuristes avec opacité renforcée */}
         {mounted &&
-          Array.from({ length: 8 }).map((_, i) => {
             const size = 80 + Math.random() * 120
             return (
               <motion.div
