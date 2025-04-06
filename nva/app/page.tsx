@@ -124,6 +124,7 @@ export default function Login() {
                 filter: "blur(40px)",
               }}
               initial={{
+                x: `${Math.random() * 100}%`,
                 y: `${Math.random() * 100}%`,
                 opacity: 0.3 + Math.random() * 0.4,
               }}
