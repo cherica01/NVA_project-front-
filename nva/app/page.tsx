@@ -152,7 +152,7 @@ export default function Login() {
               animate={{
                 opacity: [0.2, 0.5, 0.2],
                 scaleY: [1, 1.5, 1],
-                opacity: [0.3, 0.6, 0.3],
+                y: [0, 10, 0],
               }}
               transition={{
                 duration: 12 + i * 2,
