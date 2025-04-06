@@ -156,7 +156,7 @@ export default function Login() {
                 y: [0, 10, 0],
               }}
               transition={{
-                duration: 12 + i * 2,
+                duration: 8 + i * 2,
                 repeat: Number.POSITIVE_INFINITY,
                 ease: "easeInOut",
               }}
