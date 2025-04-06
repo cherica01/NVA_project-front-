@@ -149,6 +149,7 @@ export default function Login() {
               key={`line-${i}`}
               className="absolute h-[1px] w-full bg-gradient-to-r from-transparent via-green-300/30 to-transparent"
               style={{ top: `${20 + i * 15}%` }}
+              initial={{ opacity: 0, scaleY: 0 }}
               animate={{
                 opacity: [0.2, 0.5, 0.2],
                 scaleY: [1, 1.5, 1],
