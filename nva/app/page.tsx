@@ -164,7 +164,6 @@ export default function Login() {
           ))}
 
         {mounted &&
-            const size = 80 + Math.random() * 120
               <motion.div
                 key={`hex-${i}`}
                 style={{
