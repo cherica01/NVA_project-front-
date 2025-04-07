@@ -162,7 +162,6 @@ export default function Login() {
               }}
             />
           ))}
-
                 style={{
                   left: `${Math.random() * 100}%`,
                 }}
