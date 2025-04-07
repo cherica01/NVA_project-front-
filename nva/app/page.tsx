@@ -168,7 +168,6 @@ export default function Login() {
                 }}
                 transition={{
                   duration: 25 + Math.random() * 10,
-                  repeat: Number.POSITIVE_INFINITY,
                   ease: "linear",
                 }}
               >
