@@ -166,7 +166,6 @@ export default function Login() {
                 style={{
                   left: `${Math.random() * 100}%`,
                 }}
-                  rotate: [0, 360],
                   opacity: [0.1, 0.3, 0.1],
                 }}
                 transition={{
