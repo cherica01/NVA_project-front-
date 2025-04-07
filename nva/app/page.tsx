@@ -168,7 +168,6 @@ export default function Login() {
                 }}
                 animate={{
                   rotate: [0, 360],
-                  scale: [1, 1.2, 0.8, 1],
                   opacity: [0.1, 0.3, 0.1],
                 }}
                 transition={{
