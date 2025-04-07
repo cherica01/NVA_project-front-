@@ -164,7 +164,6 @@ export default function Login() {
           ))}
 
                 style={{
-                  top: `${Math.random() * 100}%`,
                   left: `${Math.random() * 100}%`,
                 }}
                 animate={{
