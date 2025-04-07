@@ -148,7 +148,7 @@ export default function Login() {
             <motion.div
               key={`line-${i}`}
               className="absolute h-[1px] w-full bg-gradient-to-r from-transparent via-green-300/30 to-transparent"
-              style={{ top: `${20 + i * 15}%` }}
+              style={{ top: `${30 + i * 20}%` }}
               initial={{ opacity: 0, scaleY: 0 }}
               animate={{
                 opacity: [0.2, 0.5, 0.2],
