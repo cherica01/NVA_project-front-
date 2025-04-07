@@ -164,7 +164,6 @@ export default function Login() {
           ))}
 
               <motion.div
-                key={`hex-${i}`}
                 style={{
                   top: `${Math.random() * 100}%`,
                   left: `${Math.random() * 100}%`,
