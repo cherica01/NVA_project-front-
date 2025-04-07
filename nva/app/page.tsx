@@ -163,7 +163,6 @@ export default function Login() {
             />
           ))}
 
-        {mounted &&
               <motion.div
                 key={`hex-${i}`}
                 style={{
