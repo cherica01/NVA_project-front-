@@ -167,7 +167,6 @@ export default function Login() {
             const size = 80 + Math.random() * 120
               <motion.div
                 key={`hex-${i}`}
-                className="absolute"
                 style={{
                   top: `${Math.random() * 100}%`,
                   left: `${Math.random() * 100}%`,
