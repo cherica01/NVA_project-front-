@@ -171,7 +171,6 @@ export default function Login() {
                   <polygon
                     points="50 0, 93.3 25, 93.3 75, 50 100, 6.7 75, 6.7 25"
                     stroke="#22c55e"
-                    strokeWidth="2"
                   />
                 </svg>
               </motion.div>
