@@ -169,7 +169,6 @@ export default function Login() {
                   />
                 </svg>
               </motion.div>
-            )
           })}
 
         {/* Grille futuriste avec des couleurs légèrement plus intenses */}
