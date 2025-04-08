@@ -169,7 +169,6 @@ export default function Login() {
               >
                 <svg width={size} height={size} viewBox="0 0 100 100">
                   <polygon
-                    points="50 0, 93.3 25, 93.3 75, 50 100, 6.7 75, 6.7 25"
                     stroke="#22c55e"
                   />
                 </svg>
