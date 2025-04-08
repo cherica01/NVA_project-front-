@@ -166,7 +166,6 @@ export default function Login() {
                   left: `${Math.random() * 100}%`,
                 }}
                 }}
-                transition={{
                   duration: 25 + Math.random() * 10,
                   ease: "linear",
                 }}
