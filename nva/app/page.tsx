@@ -169,7 +169,6 @@ export default function Login() {
                   />
                 </svg>
               </motion.div>
-          })}
 
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,128,0,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,128,0,0.1)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
       </div>
