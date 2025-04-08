@@ -166,7 +166,6 @@ export default function Login() {
                 }}
                 <svg width={size} height={size} viewBox="0 0 100 100">
                   <polygon
-                    stroke="#22c55e"
                   />
                 </svg>
               </motion.div>
