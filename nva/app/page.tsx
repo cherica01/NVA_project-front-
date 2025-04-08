@@ -165,7 +165,6 @@ export default function Login() {
                 style={{
                   left: `${Math.random() * 100}%`,
                 }}
-                }}
                   duration: 25 + Math.random() * 10,
                   ease: "linear",
                 }}
