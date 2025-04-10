@@ -173,7 +173,7 @@ export default function Login() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,128,0,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,128,0,0.1)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
       </div>
 
-      {/* Contenu principal */}
+      {/* Contenu principal avec animation d'entrée fluide */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
