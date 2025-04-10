@@ -167,7 +167,6 @@ export default function Login() {
                 <svg width={size} height={size} viewBox="0 0 100 100">
                   <polygon
                 </svg>
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,128,0,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,128,0,0.1)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
       </div>
 
       {/* Contenu principal avec animation d'entrée fluide */}
