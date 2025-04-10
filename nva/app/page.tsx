@@ -165,7 +165,6 @@ export default function Login() {
                 style={{
                 }}
                 <svg width={size} height={size} viewBox="0 0 100 100">
-                  <polygon
                 </svg>
       </div>
 
