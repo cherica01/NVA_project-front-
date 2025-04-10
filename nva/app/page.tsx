@@ -163,7 +163,6 @@ export default function Login() {
             />
           ))}
                 style={{
-                }}
       </div>
 
       {/* Contenu principal avec animation d'entrée fluide */}
