@@ -174,6 +174,7 @@ export default function Login() {
         <motion.div
           {/* En-tête avec logo */}
           initial={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+          animate={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
           <div className="pt-10 pb-6 px-8">
             <motion.div
               className="flex justify-center mb-8"
