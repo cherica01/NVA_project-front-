@@ -182,7 +182,7 @@ export default function Login() {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{
-                duration: 1,
+            >
                 type: "spring",
                 stiffness: 200,
                 delay: 0.3,
