@@ -178,7 +178,7 @@ export default function Login() {
           <div className="pt-10 pb-6 px-8">
             <motion.div
               className="flex justify-center mb-8"
-              initial={{ scale: 0.5, opacity: 0 }}
+              initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{
                 duration: 1,
