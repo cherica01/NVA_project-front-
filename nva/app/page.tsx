@@ -171,7 +171,7 @@ export default function Login() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md px-6"
       >
-        <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-xl border border-green-100 overflow-hidden">
+        <motion.div
           {/* En-tête avec logo */}
           <div className="pt-10 pb-6 px-8">
             <motion.div
