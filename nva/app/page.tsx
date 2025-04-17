@@ -172,71 +172,51 @@ export default function Login() {
         className="relative z-10 w-full max-w-md px-6"
       >
         <motion.div
-          {/* En-tête avec logo */}
+          className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-green-100/50 overflow-hidden"
           initial={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
           animate={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
+          transition={{ duration: 1, delay: 0.5 }}
         >
+          {/* Logo avec animation d'entrée et pulsation subtile */}
           <div className="pt-10 pb-6 px-8">
             <motion.div
               className="flex justify-center mb-8"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{
+              transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
             >
-                type: "spring",
-                stiffness: 200,
-                delay: 0.3,
-              }}
-            >
-              <div className="relative">
+              <motion.div
+                className="relative"
+                animate={{ scale: [1, 1.03, 1] }}
+                transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+              >
                 <div className="text-6xl font-bold">
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-emerald-700">
                     NVA
                   </span>
                 </div>
-                <motion.div
-                  className="absolute -inset-4 rounded-full border border-green-300"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1, delay: 1 }}
-                />
-                <motion.div
-                  className="absolute -inset-8 rounded-full border border-green-200"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1, delay: 1.2 }}
-                />
 
-                {/* Particules autour du logo */}
-                {mounted &&
-                  Array.from({ length: 8 }).map((_, i) => (
-                    <motion.div
-                      key={`particle-${i}`}
-                      className="absolute w-2 h-2 rounded-full bg-green-500"
-                      style={{
-                        top: `${50 + Math.cos((i * Math.PI) / 4) * 50}%`,
-                        left: `${50 + Math.sin((i * Math.PI) / 4) * 50}%`,
-                        opacity: 0.8,
-                      }}
-                      animate={{
-                        scale: [0.8, 1.3, 0.8],
-                        opacity: [0.5, 1, 0.5],
-                      }}
-                      transition={{
-                        duration: 2 + i * 0.2,
-                        repeat: Number.POSITIVE_INFINITY,
-                        ease: "easeInOut",
-                      }}
-                    />
-                  ))}
-              </div>
+                {/* Cercles concentriques autour du logo */}
+                <motion.div
+                  className="absolute -inset-4 rounded-full border border-green-300/50"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 1, delay: 0.3 }}
+                />
+                <motion.div
+                  className="absolute -inset-8 rounded-full border border-green-200/30"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 1, delay: 0.5 }}
+                />
+              </motion.div>
             </motion.div>
 
             <motion.h2
               className="text-2xl font-bold text-center text-gray-800 mb-2"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
               Connexion
             </motion.h2>
@@ -244,26 +224,26 @@ export default function Login() {
               className="text-gray-500 text-center"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
             >
               Entrez vos identifiants pour accéder à votre compte
             </motion.p>
           </div>
 
-          {/* Formulaire */}
+          {/* Formulaire avec animations d'entrée séquentielles */}
           <div className="px-8 pb-8">
             <form onSubmit={handleLogin} className="space-y-5">
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
               >
                 <Label htmlFor="username" className="text-gray-700 text-sm font-medium">
                   Nom d'utilisateur
                 </Label>
                 <div className="relative group">
-                  <div className="absolute left-0 top-0 h-full w-10 flex items-center justify-center text-gray-400 group-focus-within:text-green-500 transition-colors">
+                  <div className="absolute left-0 top-0 h-full w-10 flex items-center justify-center text-gray-400 group-focus-within:text-green-500 transition-colors duration-300">
                     <UserIcon className="w-5 h-5" />
                   </div>
                   <Input
@@ -271,12 +251,17 @@ export default function Login() {
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="pl-10 bg-white/50 border-gray-200 text-gray-800 focus:border-green-500 focus:ring-1 focus:ring-green-500 rounded-lg"
+                    className="pl-10 bg-white/50 border-gray-200 text-gray-800 focus:border-green-500 focus:ring-1 focus:ring-green-500 rounded-lg transition-all duration-300"
                     placeholder="Entrez votre nom d'utilisateur"
                     required
                     autoComplete="username"
                   />
-                  <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-green-400 to-emerald-600 group-focus-within:w-full transition-all duration-300"></div>
+                  <motion.div
+                    className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-green-400 to-emerald-600"
+                    initial={{ width: 0 }}
+                    whileInView={{ width: "100%" }}
+                    transition={{ duration: 0.3, delay: 0.6 }}
+                  />
                 </div>
               </motion.div>
 
@@ -284,13 +269,13 @@ export default function Login() {
                 className="space-y-2"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.9 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
               >
                 <Label htmlFor="password" className="text-gray-700 text-sm font-medium">
                   Mot de passe
                 </Label>
                 <div className="relative group">
-                  <div className="absolute left-0 top-0 h-full w-10 flex items-center justify-center text-gray-400 group-focus-within:text-green-500 transition-colors">
+                  <div className="absolute left-0 top-0 h-full w-10 flex items-center justify-center text-gray-400 group-focus-within:text-green-500 transition-colors duration-300">
                     <LockClosedIcon className="w-5 h-5" />
                   </div>
                   <Input
@@ -298,19 +283,27 @@ export default function Login() {
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-white/50 border-gray-200 text-gray-800 focus:border-green-500 focus:ring-1 focus:ring-green-500 rounded-lg"
+                    className="pl-10 pr-10 bg-white/50 border-gray-200 text-gray-800 focus:border-green-500 focus:ring-1 focus:ring-green-500 rounded-lg transition-all duration-300"
                     placeholder="Entrez votre mot de passe"
                     required
                     autoComplete="current-password"
                   />
-                  <button
+                  <motion.button
                     type="button"
                     onClick={togglePasswordVisibility}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-500 focus:outline-none transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-500 focus:outline-none"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
                   >
                     {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                  </button>
-                  <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-green-400 to-emerald-600 group-focus-within:w-full transition-all duration-300"></div>
+                  </motion.button>
+                  <motion.div
+                    className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-green-400 to-emerald-600"
+                    initial={{ width: 0 }}
+                    whileInView={{ width: "100%" }}
+                    transition={{ duration: 0.3, delay: 0.7 }}
+                  />
                 </div>
               </motion.div>
 
@@ -318,9 +311,9 @@ export default function Login() {
                 className="flex items-center"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 1 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
               >
-                <div className="relative">
+                <motion.div className="relative" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <input
                     type="checkbox"
                     id="remember-me"
@@ -338,6 +331,7 @@ export default function Login() {
                       <motion.svg
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2 }}
                         className="w-4 h-4 text-white"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -347,7 +341,7 @@ export default function Login() {
                       </motion.svg>
                     )}
                   </div>
-                </div>
+                </motion.div>
                 <label
                   htmlFor="remember-me"
                   className="ml-2 block text-sm text-gray-600 cursor-pointer"
@@ -360,9 +354,9 @@ export default function Login() {
               <AnimatePresence>
                 {error && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
                     transition={{ duration: 0.3 }}
                     className="py-2 px-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
                   >
@@ -372,9 +366,9 @@ export default function Login() {
 
                 {success && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
                     transition={{ duration: 0.3 }}
                     className="py-2 px-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm"
                   >
@@ -386,29 +380,19 @@ export default function Login() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 1.1 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
               >
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-12 relative overflow-hidden group bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all duration-300 shadow-lg"
+                  className="w-full h-12 relative overflow-hidden group bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all duration-300 shadow-md"
                 >
-                  <div className="absolute inset-0 w-full h-full">
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute bg-white h-0.5 w-full"
-                          style={{
-                            top: `${20 * i}%`,
-                            left: 0,
-                            transform: `translateY(${10 * i}px) rotate(${i % 2 ? -5 : 5}deg)`,
-                            opacity: 0.5 - i * 0.1,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                  <motion.div
+                    className="absolute inset-0 w-full h-full bg-white/0 group-hover:bg-white/10"
+                    initial={{ x: "-100%" }}
+                    whileHover={{ x: "100%" }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                  />
 
                   <span className="relative flex items-center justify-center">
                     {loading ? (
@@ -442,7 +426,7 @@ export default function Login() {
                           className="ml-2"
                           initial={{ x: 0 }}
                           whileHover={{ x: 5 }}
-                          transition={{ duration: 0.2 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
                         >
                           <ArrowRightIcon className="w-5 h-5" />
                         </motion.div>
@@ -454,25 +438,17 @@ export default function Login() {
             </form>
 
             <motion.div
-              className="mt-6 text-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 1.2 }}
-            >
-              {/* Lien ou autres informations complémentaires */}
-            </motion.div>
-
-            <motion.div
               className="mt-8 text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 1.3 }}
+              transition={{ duration: 0.5, delay: 0.9 }}
             >
               <p className="text-xs text-gray-500">© 2025 NVA. Tous droits réservés.</p>
             </motion.div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   )
 }
+

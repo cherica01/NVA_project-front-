@@ -49,7 +49,6 @@ export default function AgentAgendaPage() {
   const [selectedDay, setSelectedDay] = useState<Day | null>(null)
   const [showEventDetail, setShowEventDetail] = useState(false)
   const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false)
-  const [showPreferencesDialog, setShowPreferencesDialog] = useState(false)
 
   useEffect(() => {
     fetchMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1)
