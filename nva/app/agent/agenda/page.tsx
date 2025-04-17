@@ -79,6 +79,7 @@ export default function AgentAgendaPage() {
       }
 
       const data = await response.json()
+      }
       setMonthData(data)
     } catch (error) {
       console.error("Erreur lors du chargement des données du mois:", error)
