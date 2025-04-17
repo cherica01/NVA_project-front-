@@ -74,7 +74,7 @@ export default function AgentAgendaPage() {
           handleAuthError()
           return
         }
-        throw new Error("Erreur lors du chargement des données du mois")
+        throw new Error(`Erreur lors du chargement des données: ${response.status}`)
       }
 
       const data = await response.json()
