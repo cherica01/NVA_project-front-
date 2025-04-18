@@ -85,6 +85,7 @@ export default function AgentAgendaPage() {
 
       const data = await response.json()
 
+        }))
       }
 
       setMonthData(data)
