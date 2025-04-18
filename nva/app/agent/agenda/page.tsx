@@ -56,6 +56,7 @@ export default function AgentAgendaPage() {
   useEffect(() => {
       const timer = setTimeout(() => {
         setSuccess(null)
+      }, 5000)
     }
   }, [success])
 
