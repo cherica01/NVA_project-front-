@@ -58,6 +58,7 @@ export default function AgentAgendaPage() {
       const timer = setTimeout(() => {
         setSuccess(null)
       }, 5000)
+      return () => clearTimeout(timer)
     }
   }, [success])
 
