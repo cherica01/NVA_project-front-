@@ -54,6 +54,7 @@ export default function AgentAgendaPage() {
 
   // Effect to clear success message after 5 seconds
   useEffect(() => {
+      const timer = setTimeout(() => {
         setSuccess(null)
     }
   }, [success])
