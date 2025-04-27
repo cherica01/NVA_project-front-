@@ -71,7 +71,7 @@ export default function AdminMessagingPage() {
   // Active tab: All, Unread
   const [activeTab, setActiveTab] = useState("all")
 
-  useEffect(() => {
+  // Définir handleAuthError avec useCallback pour stabilité
   const handleAuthError = useCallback(() => {
     setError("Votre session a expiré. Veuillez vous reconnecter.")
     router.push("/login")
