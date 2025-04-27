@@ -111,7 +111,6 @@ export default function AdminMessagingPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
-
   // Effect to clear success message after 5 seconds
   useEffect(() => {
     if (success) {
