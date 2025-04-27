@@ -72,7 +72,7 @@ export default function AdminMessagingPage() {
   const [activeTab, setActiveTab] = useState("all")
 
   useEffect(() => {
-    fetchCurrentUser()
+  const handleAuthError = useCallback(() => {
     fetchUsers()
     fetchConversations()
   }, [router])
