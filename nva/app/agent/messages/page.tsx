@@ -32,7 +32,6 @@ interface User {
 interface Message {
   id: number
   sender: User
-  sender_id?: number
   sender_name?: string
   receiver_id?: number
   receiver_name?: string
