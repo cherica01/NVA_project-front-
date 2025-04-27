@@ -108,7 +108,7 @@ export default function AdminMessagingPage() {
     } catch (error) {
       console.error("Erreur lors du chargement de l'utilisateur courant:", error)
     }
-  }
+  }, [handleAuthError])
 
   // Scroll to bottom when messages change
   useEffect(() => {
