@@ -77,7 +77,6 @@ export default function AdminMessagingPage() {
     fetchConversations()
     fetchUnreadCount()
 
-    // Mettre à jour le compteur de messages non lus toutes les 30 secondes
     const interval = setInterval(fetchUnreadCount, 30000)
     return () => clearInterval(interval)
   }, [])
