@@ -75,7 +75,7 @@ export default function AdminMessagingPage() {
     fetchCurrentUser()
     fetchUsers()
     fetchConversations()
-    fetchUnreadCount()
+  }, [router])
 
     const interval = setInterval(fetchUnreadCount, 30000)
     return () => clearInterval(interval)
