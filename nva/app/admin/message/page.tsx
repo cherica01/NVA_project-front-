@@ -78,7 +78,6 @@ export default function AdminMessagingPage() {
   }, [router])
 
     return () => clearInterval(interval)
-  }, [])
 
   // Récupérer l'utilisateur courant
   const fetchCurrentUser = useCallback(async () => {
