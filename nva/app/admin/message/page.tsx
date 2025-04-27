@@ -107,7 +107,6 @@ export default function AdminMessagingPage() {
       console.error("Erreur lors du chargement de l'utilisateur courant:", error)
     }
   }, [handleAuthError])
-
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom()
