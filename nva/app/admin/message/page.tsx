@@ -109,7 +109,6 @@ export default function AdminMessagingPage() {
   }, [handleAuthError])
   // Scroll to bottom when messages change
   useEffect(() => {
-    scrollToBottom()
   }, [messages])
   // Effect to clear success message after 5 seconds
   useEffect(() => {
