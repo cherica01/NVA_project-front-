@@ -82,7 +82,7 @@ export default function AdminMessagingPage() {
   }, [])
 
   // Récupérer l'utilisateur courant
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
