@@ -73,7 +73,7 @@ export default function AdminMessagingPage() {
 
   useEffect(() => {
   const handleAuthError = useCallback(() => {
-    fetchUsers()
+    setError("Votre session a expiré. Veuillez vous reconnecter.")
     fetchConversations()
   }, [router])
 
