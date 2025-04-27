@@ -118,7 +118,6 @@ export default function AdminMessagingPage() {
       }, 5000)
       return () => clearTimeout(timer)
     }
-  }, [success])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
