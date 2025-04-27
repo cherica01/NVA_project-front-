@@ -113,7 +113,6 @@ export default function AdminMessagingPage() {
   }, [messages])
   // Effect to clear success message after 5 seconds
   useEffect(() => {
-    if (success) {
         setSuccess(null)
       }, 5000)
       return () => clearTimeout(timer)
