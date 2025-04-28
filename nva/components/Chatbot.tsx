@@ -17,6 +17,7 @@ import { apiUrl } from "@/util/config"
   date: string
   time: string
   description?: string
+  agents?: string[]
 }
 
 interface Message {
