@@ -240,7 +240,7 @@ export default function Login() {
                 transition={{ duration: 0.5, delay: 0.5 }}
               >
                 <Label htmlFor="username" className="text-gray-700 text-sm font-medium">
-                  Nom d'utilisateur
+                  Nom d&#39;utilisateur
                 </Label>
                 <div className="relative group">
                   <div className="absolute left-0 top-0 h-full w-10 flex items-center justify-center text-gray-400 group-focus-within:text-green-500 transition-colors duration-300">
