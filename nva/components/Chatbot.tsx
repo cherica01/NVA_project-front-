@@ -26,7 +26,7 @@ interface Message {
   timestamp: Date
   intent?: string
   action?: string
-  actionData?: any
+  actionData?: EventActionData
 }
 
 interface ChatbotProps {
