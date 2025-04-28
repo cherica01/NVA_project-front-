@@ -17,6 +17,7 @@ import { apiUrl } from "@/util/config"
   status?: string
   date: string
   time: string
+  location: string
   description?: string
   agents?: string[]
 }
