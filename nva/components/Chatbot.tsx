@@ -13,6 +13,7 @@ import { getAccessToken } from "@/util/biscuit"
 import { toast } from "@/hooks/use-toast"
 import { apiUrl } from "@/util/config"
 
+  status?: string
 
 interface Message {
   id: string
