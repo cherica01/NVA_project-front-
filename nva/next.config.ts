@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   images: {
     domains: ["picsum.photos"],
         hostname: "127.0.0.1",
+        port: "8000",
         pathname: "/media/**", // Autorise les images dans le dossier /media/
       },
   },
