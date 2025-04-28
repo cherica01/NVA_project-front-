@@ -84,7 +84,7 @@ export default function Login() {
       } else {
         setError(data.detail || "Erreur lors de la connexion.")
       }
-    } catch (err) {
+    } catch {
       setError("Une erreur est survenue. Veuillez réessayer.")
     } finally {
       setLoading(false)
