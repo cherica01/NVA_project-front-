@@ -5,7 +5,6 @@ import { Calendar, CreditCard, Users, TrendingUp, Activity, ArrowUpCircle, Arrow
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { format } from "date-fns"
@@ -229,7 +228,7 @@ export default function Dashboard() {
                     <div className="text-3xl font-bold text-gray-800 dark:text-white">{stats?.active_agents || 0}</div>
                     <p className="text-xs text-green-500 flex items-center gap-1 mt-1">
                       <TrendingUp className="h-3 w-3" />
-                      sur {stats?.total_agents || 0} agents
+                      sur {stats?.total_agents || 0} agents&apos;
                     </p>
                   </>
                 )}
@@ -260,7 +259,7 @@ export default function Dashboard() {
             <Card className="backdrop-blur-lg bg-white/50 dark:bg-green-950/30 border-none shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                  Prochain Paiement
+                  Prochain Paiement&apos;
                 </CardTitle>
                 <CreditCard className="h-5 w-5 text-green-500" />
               </CardHeader>
@@ -356,7 +355,7 @@ export default function Dashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[40%]">Nom de l'Événement</TableHead>
+                          <TableHead className="w-[40%]">Nom de l Événement</TableHead>
                           <TableHead className="w-[20%]">Date</TableHead>
                           <TableHead className="w-[20%] hidden sm:table-cell">Agents</TableHead>
                           <TableHead className="w-[20%]">Statut</TableHead>
@@ -442,7 +441,7 @@ export default function Dashboard() {
                                   {payment.type === "credit" ? "Crédit" : "Débit"}
                                 </span>
                               </TableCell>
-                              <TableCell>{Math.abs(payment.amount).toFixed(2)} €</TableCell>
+                              <TableCell>{Math.abs(payment.amount).toFixed(2)} AR</TableCell>
                               <TableCell className="hidden sm:table-cell">{payment.agent}</TableCell>
                             </TableRow>
                           ))
