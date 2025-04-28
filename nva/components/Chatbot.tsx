@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast"
 import { apiUrl } from "@/util/config"
 
   status?: string
+  date: string
 
 interface Message {
   id: string
