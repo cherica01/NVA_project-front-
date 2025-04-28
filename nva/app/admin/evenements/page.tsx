@@ -700,7 +700,7 @@ export default function EventManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cet événement ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. L'événement sera définitivement supprimé.
+              Cette action est irréversible. L&apos;événement sera définitivement supprimé.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
