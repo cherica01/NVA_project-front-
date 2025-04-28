@@ -16,6 +16,7 @@ import { apiUrl } from "@/util/config"
   status?: string
   date: string
   time: string
+  description?: string
 
 interface Message {
   id: string
