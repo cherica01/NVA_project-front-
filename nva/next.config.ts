@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
         port: "8000",
         pathname: "/media/**", // Autorise les images dans le dossier /media/
       },
+        protocol: "https",
         pathname: "/**",
   },
 };
