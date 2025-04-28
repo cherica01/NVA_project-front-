@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -44,22 +44,12 @@ export default function PaymentManagementPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [formSuccess, setFormSuccess] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchAgents()
-    fetchPayments()
-  }, [])
+  const handleAuthError = useCallback(() => {
+    setFormError("Votre session a expiré. Veuillez vous reconnecter.")
+    router.push("")
+  }, [router])
 
-  // Effet pour effacer les messages de succès après 5 secondes
-  useEffect(() => {
-    if (formSuccess) {
-      const timer = setTimeout(() => {
-        setFormSuccess(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [formSuccess])
-
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
@@ -80,9 +70,8 @@ export default function PaymentManagementPage() {
       }
 
       const data = await response.json()
-      console.log("Agents récupérés:", data) // Débogage
+      console.log("Agents récupérés:", data)
 
-      // Vérifier le format des données et les transformer si nécessaire
       const formattedAgents = Array.isArray(data)
         ? data.map((agent) => ({
             id: agent.id,
@@ -95,9 +84,9 @@ export default function PaymentManagementPage() {
       console.error("Erreur lors du chargement des agents:", error)
       setFormError("Impossible de charger la liste des agents")
     }
-  }
+  }, [handleAuthError])
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setFetchingData(true)
     try {
       const accessToken = await getAccessToken()
@@ -126,10 +115,23 @@ export default function PaymentManagementPage() {
     } finally {
       setFetchingData(false)
     }
-  }
+  }, [handleAuthError])
+
+  useEffect(() => {
+    fetchAgents()
+    fetchPayments()
+  }, [fetchAgents, fetchPayments])
+
+  useEffect(() => {
+    if (formSuccess) {
+      const timer = setTimeout(() => {
+        setFormSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [formSuccess])
 
   const handlePayment = async () => {
-    // Validation des champs
     if (!selectedAgent) {
       setFormError("Veuillez sélectionner un agent")
       return
@@ -156,13 +158,11 @@ export default function PaymentManagementPage() {
         return
       }
 
-      // Préparer la description
       let paymentDescription = description
       if (!paymentDescription) {
         paymentDescription = paymentType === "credit" ? `Crédit pour ${workDays} jours travaillés` : `Débit de compte`
       }
 
-      // Préparer les données pour l'API
       const paymentData = {
         agent_id: Number(selectedAgent),
         amount: paymentType === "credit" ? Number.parseFloat(amount) : -Number.parseFloat(amount),
@@ -170,7 +170,7 @@ export default function PaymentManagementPage() {
         description: paymentDescription,
       }
 
-      console.log("Données de paiement envoyées:", paymentData) // Débogage
+      console.log("Données de paiement envoyées:", paymentData)
 
       const response = await fetch(`${apiUrl}/payment/create/`, {
         method: "POST",
@@ -191,20 +191,17 @@ export default function PaymentManagementPage() {
       }
 
       const result = await response.json()
-      console.log("Résultat du paiement:", result) // Débogage
+      console.log("Résultat du paiement:", result)
 
-      // Message de succès
       const agentName = agents.find((a) => a.id === Number(selectedAgent))?.username || `Agent ${selectedAgent}`
       const successMessage = `Paiement ${paymentType === "credit" ? "crédité" : "débité"} avec succès pour ${agentName}`
       setFormSuccess(successMessage)
 
-      // Réinitialiser le formulaire
       setSelectedAgent("")
       setWorkDays("")
       setAmount("")
       setDescription("")
 
-      // Rafraîchir la liste des paiements
       fetchPayments()
     } catch (error) {
       console.error("Erreur lors du paiement:", error)
@@ -214,30 +211,22 @@ export default function PaymentManagementPage() {
     }
   }
 
-  const handleAuthError = () => {
-    setFormError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
-  }
-
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "Pp", { locale: fr })
-    } catch (error) {
+    } catch {
       return "Date invalide"
     }
   }
 
-  // Fonction pour formater le montant total en toute sécurité
   const formatAmount = (value: number | string | undefined | null) => {
     if (value === undefined || value === null) return "0.00"
 
-    // Si c'est déjà une chaîne, essayer de la convertir en nombre
     if (typeof value === "string") {
       const parsed = Number.parseFloat(value)
       return isNaN(parsed) ? "0.00" : parsed.toFixed(2)
     }
 
-    // Si c'est un nombre
     return value.toFixed(2)
   }
 
@@ -364,7 +353,7 @@ export default function PaymentManagementPage() {
             </div>
           ) : payments.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-600">Aucun paiement trouvé. Effectuez votre premier paiement !</p>
+              <p className="text-gray-600">Aucun paiement trouvé. Effectuez votre première paiement !</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -386,18 +375,14 @@ export default function PaymentManagementPage() {
                       <TableCell>{payment.agent}</TableCell>
                       <TableCell>
                         <Badge
-                          className={`${
-                            payment.amount >= 0 ? "bg-green-300 text-green-900" : "bg-red-300 text-red-900"
-                          } dark:bg-green-700 dark:text-white`}
+                          className={`${payment.amount >= 0 ? "bg-green-300 text-green-900" : "bg-red-300 text-red-900"} dark:bg-green-700 dark:text-white`}
                         >
                           {Math.abs(payment.amount).toFixed(2)} AR
                         </Badge>
                       </TableCell>
                       <TableCell>
                         {payment.amount >= 0 ? (
-                          <Badge className="bg-green-300 text-green-900 dark:bg-green-700 dark:text-white">
-                            Crédit
-                          </Badge>
+                          <Badge className="bg-green-300 text-green-900 dark:bg-green-700 dark:text-white">Crédit</Badge>
                         ) : (
                           <Badge className="bg-red-300 text-red-900 dark:bg-red-700 dark:text-white">Débit</Badge>
                         )}
@@ -417,4 +402,3 @@ export default function PaymentManagementPage() {
     </div>
   )
 }
-
