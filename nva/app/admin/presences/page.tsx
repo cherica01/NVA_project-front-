@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -65,8 +66,7 @@ interface AgentStat {
   pending: number
 }
 
-// Fonction pour vérifier si une valeur est un nombre valide
-const isValidNumber = (value: any): boolean => {
+const isValidNumber = (value: number | string | null | undefined): boolean => {
   if (value === null || value === undefined) return false
   if (typeof value === "number") return !isNaN(value)
   if (typeof value === "string") {
@@ -76,29 +76,23 @@ const isValidNumber = (value: any): boolean => {
   return false
 }
 
-// Fonction pour formater un nombre avec un nombre spécifique de décimales
-const formatNumber = (value: any, decimals = 6): string => {
+const formatNumber = (value: number | string | null | undefined, decimals = 6): string => {
   if (!isValidNumber(value)) return "N/A"
 
   const num = typeof value === "string" ? Number.parseFloat(value) : value
-  return num.toFixed(decimals)
+  return (num ?? 0).toFixed(decimals)
 }
 
-// Fonction pour obtenir l'URL complète d'une photo
 const getPhotoUrl = (photoPath: string | null): string => {
   if (!photoPath) return "/placeholder.svg"
 
-  // Si l'URL est déjà complète (commence par http ou https), la retourner telle quelle
   if (photoPath.startsWith("http")) return photoPath
 
-  // Si l'URL commence par /media, il s'agit d'un chemin relatif à la racine du serveur Django
   if (photoPath.startsWith("/media")) {
-    // Extraire le domaine de l'API URL
     const apiDomain = (apiUrl ?? "").split("/").slice(0, 3).join("/")
     return `${apiDomain}${photoPath}`
   }
 
-  // Sinon, préfixer avec l'URL de l'API complète
   return `${apiUrl}${photoPath}`
 }
 
@@ -116,43 +110,12 @@ export default function AdminPresencePage() {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
   const [activeTab, setActiveTab] = useState("list")
 
-  useEffect(() => {
-    fetchPresences()
-    fetchDashboardStats()
-  }, [])
+  const handleAuthError = useCallback(() => {
+    setError("Votre session a expiré. Veuillez vous reconnecter.")
+    router.push("/")
+  }, [router])
 
-  // Effect to filter presences when search term or status filter changes
-  useEffect(() => {
-    if (presences.length > 0) {
-      let filtered = [...presences]
-
-      if (searchTerm) {
-        filtered = filtered.filter(
-          (presence) =>
-            presence.agent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (presence.location_name && presence.location_name.toLowerCase().includes(searchTerm.toLowerCase())),
-        )
-      }
-
-      if (statusFilter) {
-        filtered = filtered.filter((presence) => presence.status === statusFilter)
-      }
-
-      setFilteredPresences(filtered)
-    }
-  }, [presences, searchTerm, statusFilter])
-
-  // Effect to clear success message after 5 seconds
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        setSuccess(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [success])
-
-  const fetchPresences = async () => {
+  const fetchPresences = useCallback(async () => {
     setLoading(true)
     try {
       const accessToken = await getAccessToken()
@@ -182,9 +145,9 @@ export default function AdminPresencePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [handleAuthError])
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = useCallback(async () => {
     setDashboardLoading(true)
     try {
       const accessToken = await getAccessToken()
@@ -209,11 +172,44 @@ export default function AdminPresencePage() {
       setDashboardStats(data)
     } catch (error) {
       console.error("Erreur lors du chargement des statistiques:", error)
-      // Ne pas afficher d'erreur pour ne pas perturber l'interface principale
     } finally {
       setDashboardLoading(false)
     }
-  }
+  }, [handleAuthError])
+
+  useEffect(() => {
+    fetchPresences()
+    fetchDashboardStats()
+  }, [fetchPresences, fetchDashboardStats])
+
+  useEffect(() => {
+    if (presences.length > 0) {
+      let filtered = [...presences]
+
+      if (searchTerm) {
+        filtered = filtered.filter(
+          (presence) =>
+            presence.agent.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (presence.location_name && presence.location_name.toLowerCase().includes(searchTerm.toLowerCase())),
+        )
+      }
+
+      if (statusFilter) {
+        filtered = filtered.filter((presence) => presence.status === statusFilter)
+      }
+
+      setFilteredPresences(filtered)
+    }
+  }, [presences, searchTerm, statusFilter])
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [success])
 
   const updatePresenceStatus = async (presenceId: number, status: string) => {
     try {
@@ -240,18 +236,15 @@ export default function AdminPresencePage() {
         throw new Error(`Erreur lors de la mise à jour du statut: ${response.status}`)
       }
 
-      // Mettre à jour la présence dans la liste
       const updatedPresences = presences.map((presence) =>
         presence.id === presenceId ? { ...presence, status } : presence,
       )
       setPresences(updatedPresences)
 
-      // Mettre à jour la présence sélectionnée si elle est ouverte
       if (selectedPresence && selectedPresence.id === presenceId) {
         setSelectedPresence({ ...selectedPresence, status })
       }
 
-      // Rafraîchir les statistiques
       fetchDashboardStats()
 
       setSuccess(`Statut mis à jour avec succès`)
@@ -261,16 +254,11 @@ export default function AdminPresencePage() {
     }
   }
 
-  const handleAuthError = () => {
-    setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
-  }
-
   const formatDateTime = (dateString: string) => {
     try {
       const date = parseISO(dateString)
       return format(date, "d MMMM yyyy à HH:mm", { locale: fr })
-    } catch (error) {
+    } catch {
       return "Date invalide"
     }
   }
@@ -569,7 +557,6 @@ export default function AdminPresencePage() {
               </TabsContent>
             </Tabs>
 
-            {/* Affichage des messages d'erreur et de succès */}
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -603,7 +590,6 @@ export default function AdminPresencePage() {
         </Card>
       </motion.div>
 
-      {/* Dialog pour afficher les détails d'une présence */}
       {selectedPresence && (
         <Dialog open={!!selectedPresence} onOpenChange={(open) => !open && setSelectedPresence(null)}>
           <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
@@ -654,7 +640,6 @@ export default function AdminPresencePage() {
                           loading="eager"
                           onLoad={(e) => {
                             console.log("Carte chargée dans le dialogue")
-                            // Force un redimensionnement pour aider le rendu
                             const iframe = e.target as HTMLIFrameElement
                             if (iframe) {
                               setTimeout(() => {
@@ -692,11 +677,17 @@ export default function AdminPresencePage() {
                   <div className="grid grid-cols-1 gap-4">
                     {selectedPresence.photos.map((photo) => (
                       <div key={photo.id} className="bg-gray-100 rounded-md overflow-hidden">
-                        <img
-                          src={getPhotoUrl(photo.photo) || "/placeholder.svg"}
-                          alt="Photo de présence"
-                          className="w-full h-auto"
-                        />
+                        <div className="relative w-full aspect-[4/3]">
+                          <Image
+                            src={getPhotoUrl(photo.photo) || "/placeholder.svg"}
+                            alt="Photo de présence"
+                            fill
+                            sizes="(max-width: 640px) 100vw, 640px"
+                            className="object-cover"
+                            placeholder="blur"
+                            blurDataURL="/placeholder.svg"
+                          />
+                        </div>
                         <div className="p-2 bg-gray-50 text-xs text-gray-500">
                           Téléchargée le {formatDateTime(photo.uploaded_at)}
                         </div>
@@ -745,4 +736,3 @@ export default function AdminPresencePage() {
     </div>
   )
 }
-
