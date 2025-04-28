@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -47,6 +47,15 @@ interface Notification {
   created_at: string
 }
 
+interface DebugInfo {
+  message?: string
+  agents?: unknown
+  notifications?: unknown
+  sentData?: unknown
+  response?: unknown
+  responseText?: string
+}
+
 export default function NotificationManagementPage() {
   const router = useRouter()
   const [agents, setAgents] = useState<Agent[]>([])
@@ -60,47 +69,23 @@ export default function NotificationManagementPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [formSuccess, setFormSuccess] = useState<string | null>(null)
   const [debugMode, setDebugMode] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null)
   const [popoverOpen, setPopoverOpen] = useState(false)
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const itemsPerPage =  5
+  const itemsPerPage = 5
   const [displayedNotifications, setDisplayedNotifications] = useState<Notification[]>([])
 
-  // Charger les agents d'abord, puis les notifications
-  useEffect(() => {
-    async function loadData() {
-      await fetchAgents()
-      await fetchNotifications()
-    }
-    loadData()
-  }, [])
+  // Définir handleAuthError avec useCallback
+  const handleAuthError = useCallback(() => {
+    setFormError("Votre session a expiré. Veuillez vous reconnecter.")
+    router.push("/")
+  }, [router])
 
-  // Effet pour effacer les messages de succès après 5 secondes
-  useEffect(() => {
-    if (formSuccess) {
-      const timer = setTimeout(() => {
-        setFormSuccess(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [formSuccess])
-
-  // Effet pour mettre à jour les notifications affichées lors du changement de page
-  useEffect(() => {
-    updateDisplayedNotifications()
-  }, [currentPage, notifications])
-
-  const updateDisplayedNotifications = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    setDisplayedNotifications(notifications.slice(startIndex, endIndex))
-    setTotalPages(Math.ceil(notifications.length / itemsPerPage))
-  }
-
-  const fetchAgents = async () => {
+  // Charger les agents
+  const fetchAgents = useCallback(async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
@@ -124,10 +109,9 @@ export default function NotificationManagementPage() {
 
       if (debugMode) {
         console.log("Agents récupérés:", data)
-        setDebugInfo((prev: any) => ({ ...prev, agents: data }))
+        setDebugInfo((prev) => ({ ...prev, agents: data }))
       }
 
-      // Vérifier le format des données et les transformer si nécessaire
       const formattedAgents = Array.isArray(data)
         ? data.map((agent) => ({
             id: agent.id,
@@ -140,9 +124,10 @@ export default function NotificationManagementPage() {
       console.error("Erreur lors du chargement des agents:", error)
       setFormError("Impossible de charger la liste des agents")
     }
-  }
+  }, [handleAuthError, debugMode])
 
-  const fetchNotifications = async () => {
+  // Charger les notifications
+  const fetchNotifications = useCallback(async () => {
     setFetchingData(true)
     try {
       const accessToken = await getAccessToken()
@@ -167,20 +152,16 @@ export default function NotificationManagementPage() {
 
       if (debugMode) {
         console.log("Notifications brutes:", data)
-        setDebugInfo((prev: any) => ({ ...prev, notifications: data }))
+        setDebugInfo((prev) => ({ ...prev, notifications: data }))
       }
 
-      // Vérifier si data est un tableau
       if (!Array.isArray(data)) {
         console.error("La réponse n'est pas un tableau:", data)
-        // Si c'est un objet avec une propriété contenant les données
         if (data && typeof data === "object") {
-          // Chercher une propriété qui pourrait contenir les notifications
           const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
           if (possibleArrayProps.length > 0) {
             data = data[possibleArrayProps[0]]
           } else {
-            // Si aucun tableau n'est trouvé, convertir en tableau si c'est un objet
             data = [data]
           }
         } else {
@@ -189,19 +170,49 @@ export default function NotificationManagementPage() {
       }
 
       setNotifications(data)
-      // Réinitialiser à la première page lors du chargement de nouvelles données
       setCurrentPage(1)
     } catch (error) {
       console.error("Erreur lors du chargement des notifications:", error)
       setFormError(`Impossible de charger les notifications: ${error instanceof Error ? error.message : String(error)}`)
-      setNotifications([]) // Initialiser avec un tableau vide en cas d'erreur
+      setNotifications([])
     } finally {
       setFetchingData(false)
     }
-  }
+  }, [handleAuthError, debugMode])
+
+  // Mettre à jour les notifications affichées
+  const updateDisplayedNotifications = useCallback(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    setDisplayedNotifications(notifications.slice(startIndex, endIndex))
+    setTotalPages(Math.ceil(notifications.length / itemsPerPage))
+  }, [currentPage, notifications, itemsPerPage])
+
+  // Charger les agents d'abord, puis les notifications
+  useEffect(() => {
+    async function loadData() {
+      await fetchAgents()
+      await fetchNotifications()
+    }
+    loadData()
+  }, [fetchAgents, fetchNotifications])
+
+  // Effet pour effacer les messages de succès après 5 secondes
+  useEffect(() => {
+    if (formSuccess) {
+      const timer = setTimeout(() => {
+        setFormSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [formSuccess])
+
+  // Effet pour mettre à jour les notifications affichées
+  useEffect(() => {
+    updateDisplayedNotifications()
+  }, [currentPage, notifications, updateDisplayedNotifications])
 
   const handleSendNotification = async () => {
-    // Validation des champs
     if (!title.trim()) {
       setFormError("Le titre est requis")
       return
@@ -212,7 +223,6 @@ export default function NotificationManagementPage() {
       return
     }
 
-    // Validation des destinataires
     if (!isGlobal && selectedAgents.length === 0) {
       setFormError("Veuillez sélectionner au moins un agent ou cocher 'Envoyer à tous les agents'")
       return
@@ -230,29 +240,24 @@ export default function NotificationManagementPage() {
         return
       }
 
-      // Préparer les données pour l'API avec les champs obligatoires
       const notificationData = {
         title: title.trim(),
         message: message.trim(),
-        date: new Date().toISOString().split("T")[0], // Format YYYY-MM-DD pour le backend Django
+        date: new Date().toISOString().split("T")[0],
         is_global: isGlobal,
       }
 
-      // Si ce n'est pas une notification globale, ajouter les destinataires
       if (!isGlobal) {
-        // Si un seul agent est sélectionné, utiliser recipient_id
         if (selectedAgents.length === 1) {
           Object.assign(notificationData, { recipient_id: selectedAgents[0] })
-        }
-        // Si plusieurs agents sont sélectionnés, utiliser recipients
-        else if (selectedAgents.length > 1) {
+        } else if (selectedAgents.length > 1) {
           Object.assign(notificationData, { recipients: selectedAgents })
         }
       }
 
       if (debugMode) {
         console.log("Données de notification envoyées:", notificationData)
-        setDebugInfo((prev: any) => ({ ...prev, sentData: notificationData }))
+        setDebugInfo((prev) => ({ ...prev, sentData: notificationData }))
       }
 
       const response = await fetch(`${apiUrl}/notification/send/`, {
@@ -264,16 +269,15 @@ export default function NotificationManagementPage() {
         body: JSON.stringify(notificationData),
       })
 
-      // Récupérer le texte brut de la réponse pour le débogage
       const responseText = await response.text()
 
       if (debugMode) {
         console.log("Réponse brute:", responseText)
         try {
           const responseJson = JSON.parse(responseText)
-          setDebugInfo((prev: any) => ({ ...prev, response: responseJson }))
-        } catch (e) {
-          setDebugInfo((prev: any) => ({ ...prev, responseText }))
+          setDebugInfo((prev) => ({ ...prev, response: responseJson }))
+        } catch {
+          setDebugInfo((prev) => ({ ...prev, responseText }))
         }
       }
 
@@ -283,22 +287,19 @@ export default function NotificationManagementPage() {
           return
         }
 
-        // Essayer de parser le JSON si possible
         let errorMessage = `Erreur ${response.status}: ${response.statusText}`
         try {
           const errorData = JSON.parse(responseText)
           errorMessage = Object.entries(errorData)
             .map(([key, value]) => `${key}: ${value}`)
             .join(", ")
-        } catch (e) {
-          // Si on ne peut pas parser le JSON, utiliser le texte brut
+        } catch {
           errorMessage = responseText || errorMessage
         }
 
         throw new Error(errorMessage)
       }
 
-      // Message de succès
       let successMessage = ""
       if (isGlobal) {
         successMessage = "Notification globale envoyée avec succès à tous les agents"
@@ -311,13 +312,11 @@ export default function NotificationManagementPage() {
 
       setFormSuccess(successMessage)
 
-      // Réinitialiser le formulaire
       setTitle("")
       setMessage("")
       setIsGlobal(false)
       setSelectedAgents([])
 
-      // Rafraîchir la liste des notifications
       await fetchNotifications()
     } catch (error) {
       console.error("Erreur lors de l'envoi de la notification:", error)
@@ -329,15 +328,10 @@ export default function NotificationManagementPage() {
     }
   }
 
-  const handleAuthError = () => {
-    setFormError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/")
-  }
-
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "Pp", { locale: fr })
-    } catch (error) {
+    } catch {
       return "Date invalide"
     }
   }
@@ -353,29 +347,22 @@ export default function NotificationManagementPage() {
     }
   }
 
-  // Fonction pour gérer la sélection/désélection de tous les agents
   const toggleSelectAllAgents = () => {
     if (selectedAgents.length === agents.length) {
-      // Si tous les agents sont déjà sélectionnés, désélectionner tous
       setSelectedAgents([])
     } else {
-      // Sinon, sélectionner tous les agents
       setSelectedAgents(agents.map((agent) => agent.id))
     }
   }
 
-  // Fonction pour gérer la sélection/désélection d'un agent
   const toggleAgentSelection = (agentId: number) => {
     if (selectedAgents.includes(agentId)) {
-      // Si l'agent est déjà sélectionné, le désélectionner
       setSelectedAgents(selectedAgents.filter((id) => id !== agentId))
     } else {
-      // Sinon, l'ajouter à la sélection
       setSelectedAgents([...selectedAgents, agentId])
     }
   }
 
-  // Fonction pour gérer le changement de page
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
@@ -590,7 +577,7 @@ export default function NotificationManagementPage() {
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Calendar className="text-green-500" />
-                  <div className="text-sm text-gray-600">Date d'envoi: {format(new Date(), "Pp", { locale: fr })}</div>
+                  <div className="text-sm text-gray-600">Date d envoi: {format(new Date(), "Pp", { locale: fr })}</div>
                 </div>
               </div>
 
@@ -630,8 +617,8 @@ export default function NotificationManagementPage() {
                     {isGlobal
                       ? "Envoyer à tous les agents"
                       : selectedAgents.length > 0
-                        ? `Envoyer à ${selectedAgents.length} agent(s)`
-                        : "Envoyer la notification"}
+                      ? `Envoyer à ${selectedAgents.length} agent(s)`
+                      : "Envoyer la notification"}
                   </div>
                 )}
               </Button>
@@ -686,7 +673,7 @@ export default function NotificationManagementPage() {
             ) : notifications.length === 0 ? (
               <div className="text-center py-12">
                 <Bell className="h-16 w-16 text-green-500/30 mx-auto mb-4" />
-                <p className="text-green-700">Aucune notification trouvée. Envoyez votre première notification !</p>
+                <p className="text-green-700">Aucune notification trouvée. Envoyez votre premi&#39;ère notification !</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -739,7 +726,6 @@ export default function NotificationManagementPage() {
                   </TableBody>
                 </Table>
 
-                {/* Pagination intégrée directement avec style futuriste */}
                 {totalPages > 1 && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -782,4 +768,3 @@ export default function NotificationManagementPage() {
     </div>
   )
 }
-
