@@ -44,7 +44,7 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
-      content: "Bonjour ! Je suis votre assistant virtuel. Comment puis-je vous aider aujourd'hui ?",
+      content:
       sender: "bot",
       timestamp: new Date(),
     },
