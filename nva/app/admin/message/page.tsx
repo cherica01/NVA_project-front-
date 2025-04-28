@@ -74,9 +74,8 @@ export default function AdminMessagingPage() {
   // Définir handleAuthError avec useCallback pour stabilité
   const handleAuthError = useCallback(() => {
     setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
+    router.push("/")
   }, [router])
-
 
   // Récupérer l'utilisateur courant
   const fetchCurrentUser = useCallback(async () => {
@@ -107,38 +106,9 @@ export default function AdminMessagingPage() {
       console.error("Erreur lors du chargement de l'utilisateur courant:", error)
     }
   }, [handleAuthError])
-  // Scroll to bottom when messages change
-  useEffect(() => {
-  // Effect to clear success message after 5 seconds
-  useEffect(() => {
-        setSuccess(null)
-      return () => clearTimeout(timer)
-    }
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  const fetchUnreadCount = async () => {
-    try {
-      const accessToken = await getAccessToken()
-      if (!accessToken) return
-
-      const response = await fetch(`${apiUrl}/messaging/unread-count/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-
-      if (!response.ok) return
-
-      const data = await response.json()
-      setUnreadCount(data.unread_count || 0)
-    } catch (error) {
-      console.error("Erreur lors du chargement du nombre de messages non lus:", error)
-    }
-  }
 
   // Récupérer tous les utilisateurs (agents et admins)
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
@@ -179,9 +149,10 @@ export default function AdminMessagingPage() {
       console.error("Erreur lors du chargement des utilisateurs:", error)
       setError("Impossible de charger la liste des utilisateurs")
     }
-  }
+  }, [handleAuthError])
 
-  const fetchConversations = async () => {
+  // Récupérer les conversations
+  const fetchConversations = useCallback(async () => {
     setLoading(true)
     try {
       const accessToken = await getAccessToken()
@@ -223,6 +194,56 @@ export default function AdminMessagingPage() {
     } finally {
       setLoading(false)
     }
+  }, [handleAuthError, selectedConversation])
+
+  // Récupérer le nombre de messages non lus
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const accessToken = await getAccessToken()
+      if (!accessToken) return
+
+      const response = await fetch(`${apiUrl}/messaging/unread-count/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+
+      if (!response.ok) return
+
+      const data = await response.json()
+      setUnreadCount(data.unread_count || 0)
+    } catch (error) {
+      console.error("Erreur lors du chargement du nombre de messages non lus:", error)
+    }
+  }, [])
+
+  // useEffect principal
+  useEffect(() => {
+    fetchCurrentUser()
+    fetchUsers()
+    fetchConversations()
+    fetchUnreadCount()
+
+    // Mettre à jour le compteur de messages non lus toutes les 30 secondes
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [fetchCurrentUser, fetchUsers, fetchConversations, fetchUnreadCount])
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  // Effect to clear success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [success])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
   const searchConversations = async (query: string) => {
@@ -411,32 +432,12 @@ export default function AdminMessagingPage() {
     }
   }
 
-  const handleAuthError = () => {
-    setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
-  }
-
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString)
-      return format(date, "Pp", { locale: fr })
-    } catch (error) {
-      return "Date invalide"
-    }
-  }
-
   const formatMessageTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString)
-      const today = new Date()
+    const date = new Date(dateString)
+    const today = new Date()
 
-      if (date.toDateString() === today.toDateString()) {
-        return format(date, "HH:mm", { locale: fr })
-      } else {
-        return format(date, "dd/MM/yyyy HH:mm", { locale: fr })
-      }
-    } catch (error) {
-      return "Heure invalide"
+    if (date.toDateString() === today.toDateString()) {
+      return format(date, "HH:mm", { locale: fr })
     }
   }
 
@@ -607,8 +608,8 @@ export default function AdminMessagingPage() {
                                 selectedConversation?.id === conversation.id
                                   ? "bg-green-100"
                                   : conversation.unread_count > 0
-                                    ? "bg-green-50"
-                                    : ""
+                                  ? "bg-green-50"
+                                  : ""
                               }`}
                               onClick={() => handleSelectConversation(conversation)}
                             >
@@ -968,4 +969,3 @@ export default function AdminMessagingPage() {
     </div>
   )
 }
-
