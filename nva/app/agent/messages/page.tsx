@@ -116,7 +116,7 @@ export default function AgentMessagingPage() {
         return
       }
 
-      // Récupérer tous les utilisateurs (agents et admins)
+      const response = await fetch(`${apiUrl}/messaging/agents/`, {
       const response = await fetch(`${apiUrl}/messaging/users/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
