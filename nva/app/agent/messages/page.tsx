@@ -105,7 +105,7 @@ export default function AgentMessagingPage() {
     } catch (error) {
       console.error("Erreur lors du chargement de l'utilisateur courant:", error)
     }
-  }
+  }, [handleAuthError])
 
   // Récupérer tous les utilisateurs (agents et admins)
   const fetchUsers = useCallback(async () => {
