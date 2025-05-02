@@ -50,34 +50,12 @@ export default function AgentNotificationsPage() {
   const itemsPerPage = 10
   const [displayedNotifications, setDisplayedNotifications] = useState<Notification[]>([])
 
-  useEffect(() => {
-    fetchNotifications()
-    fetchUnreadCount()
-  }, [])
+  const handleAuthError = useCallback(() => {
+    setError("Votre session a expiré. Veuillez vous reconnecter.")
+    router.push("/")
+  }, [router])
 
-  // Effet pour effacer les messages de succès après 5 secondes
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        setSuccess(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [success])
-
-  // Effet pour mettre à jour les notifications affichées lors du changement de page
-  useEffect(() => {
-    updateDisplayedNotifications()
-  }, [currentPage, notifications])
-
-  const updateDisplayedNotifications = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    setDisplayedNotifications(notifications.slice(startIndex, endIndex))
-    setTotalPages(Math.ceil(notifications.length / itemsPerPage))
-  }
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true)
     try {
       const accessToken = await getAccessToken()
@@ -100,17 +78,13 @@ export default function AgentNotificationsPage() {
 
       const data = await response.json()
 
-      // Vérifier si data est un tableau
       if (!Array.isArray(data)) {
         console.error("La réponse n'est pas un tableau:", data)
-        // Si c'est un objet avec une propriété contenant les données
         if (data && typeof data === "object") {
-          // Chercher une propriété qui pourrait contenir les notifications
           const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
           if (possibleArrayProps.length > 0) {
             setNotifications(data[possibleArrayProps[0]])
           } else {
-            // Si aucun tableau n'est trouvé, convertir en tableau si c'est un objet
             setNotifications([data])
           }
         } else {
@@ -126,9 +100,9 @@ export default function AgentNotificationsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [handleAuthError])
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
@@ -148,7 +122,32 @@ export default function AgentNotificationsPage() {
     } catch (error) {
       console.error("Erreur lors du chargement du nombre de notifications non lues:", error)
     }
-  }
+  }, [])
+
+  const updateDisplayedNotifications = useCallback(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    setDisplayedNotifications(notifications.slice(startIndex, endIndex))
+    setTotalPages(Math.ceil(notifications.length / itemsPerPage))
+  }, [currentPage, notifications])
+
+  useEffect(() => {
+    fetchNotifications()
+    fetchUnreadCount()
+  }, [fetchNotifications, fetchUnreadCount])
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [success])
+
+  useEffect(() => {
+    updateDisplayedNotifications()
+  }, [currentPage, notifications, updateDisplayedNotifications])
 
   const markAsRead = async (notificationId: number) => {
     setMarkingAsRead(notificationId)
@@ -178,14 +177,12 @@ export default function AgentNotificationsPage() {
         throw new Error("Erreur lors du marquage de la notification comme lue")
       }
 
-      // Mettre à jour l'état local
       setNotifications(
         notifications.map((notification) =>
           notification.id === notificationId ? { ...notification, is_read: true } : notification,
         ),
       )
 
-      // Mettre à jour le compteur de notifications non lues
       setUnreadCount(Math.max(0, unreadCount - 1))
 
       setSuccess("Notification marquée comme lue")
@@ -209,7 +206,6 @@ export default function AgentNotificationsPage() {
         return
       }
 
-      // Marquer toutes les notifications non lues comme lues
       const unreadNotifications = notifications.filter((notification) => !notification.is_read)
 
       if (unreadNotifications.length === 0) {
@@ -218,7 +214,6 @@ export default function AgentNotificationsPage() {
         return
       }
 
-      // Utiliser Promise.all pour envoyer toutes les requêtes en parallèle
       await Promise.all(
         unreadNotifications.map((notification) =>
           fetch(`${apiUrl}/notification/${notification.id}/mark-as-read/`, {
@@ -231,10 +226,8 @@ export default function AgentNotificationsPage() {
         ),
       )
 
-      // Mettre à jour l'état local
       setNotifications(notifications.map((notification) => ({ ...notification, is_read: true })))
 
-      // Mettre à jour le compteur de notifications non lues
       setUnreadCount(0)
 
       setSuccess("Toutes les notifications ont été marquées comme lues")
@@ -246,15 +239,10 @@ export default function AgentNotificationsPage() {
     }
   }
 
-  const handleAuthError = () => {
-    setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
-  }
-
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "Pp", { locale: fr })
-    } catch (error) {
+    } catch {
       return "Date invalide"
     }
   }
@@ -391,7 +379,7 @@ export default function AgentNotificationsPage() {
                 >
                   <Bell className="h-16 w-16 text-green-500/30 mx-auto mb-4" />
                 </motion.div>
-                <p className="text-green-700">Vous n'avez aucune notification pour le moment.</p>
+                <p className="text-green-700">Vous n avez aucune notification pour le moment.</p>
               </div>
             ) : (
               <>
@@ -480,7 +468,6 @@ export default function AgentNotificationsPage() {
                   </Table>
                 </div>
 
-                {/* Pagination intégrée directement avec style futuriste */}
                 {totalPages > 1 && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -523,4 +510,3 @@ export default function AgentNotificationsPage() {
     </div>
   )
 }
-
