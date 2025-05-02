@@ -57,6 +57,7 @@ interface Conversation {
 
 export default function AgentMessagingPage() {
   const router = useRouter()
+  const [users, setUsers] = useState<User[]>([])
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
