@@ -69,6 +69,7 @@ export default function AgentMessagingPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
 
+  // Active tab: All, Unread
   const [activeTab, setActiveTab] = useState("all")
 
   const handleAuthError = useCallback(() => {
