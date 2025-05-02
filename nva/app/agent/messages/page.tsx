@@ -44,7 +44,6 @@ interface Conversation {
   id: number
   participants: User[]
   participant1?: User
-  participant2?: User
   created_at: string
   updated_at: string
   last_message?: {
