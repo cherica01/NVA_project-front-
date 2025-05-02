@@ -68,7 +68,6 @@ export default function AgentMessagingPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [users, setUsers] = useState<User[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
 
 
