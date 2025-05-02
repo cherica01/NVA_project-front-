@@ -69,6 +69,7 @@ export default function AgentMessagingPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
 
+  const [activeTab, setActiveTab] = useState("all")
 
   const handleAuthError = useCallback(() => {
     setError("Votre session a expiré. Veuillez vous reconnecter.")
