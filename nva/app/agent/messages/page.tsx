@@ -72,6 +72,7 @@ export default function AgentMessagingPage() {
   const [users, setUsers] = useState<User[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
 
+
   // Récupérer l'utilisateur courant
   const fetchCurrentUser = async () => {
     try {
