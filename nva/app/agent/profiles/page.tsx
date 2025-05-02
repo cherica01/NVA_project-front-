@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, Camera, Upload, Trash2, Info, Save, X, Phone, MapPin, Calendar, Image, Play } from "lucide-react"
+import { User, Camera, Upload, Trash2, Info, Save, X, Phone, MapPin, Calendar, Image as ImageIcon, Play } from "lucide-react"
 import { apiUrl } from "@/util/config"
 import { getAccessToken } from "@/util/biscuit"
 import { format, parseISO } from "date-fns"
@@ -80,26 +80,15 @@ export default function AgentProfilePage() {
   const [uploading, setUploading] = useState(false)
   const [photoType, setPhotoType] = useState<"profile" | "cover" | "animation">("profile")
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // États pour la confirmation de suppression et l'affichage en grand format
   const [photoToDelete, setPhotoToDelete] = useState<number | null>(null)
   const [enlargedPhoto, setEnlargedPhoto] = useState<Photo | null>(null)
 
-  useEffect(() => {
-    fetchProfile()
-  }, [])
+  const handleAuthError = useCallback(() => {
+    setError("Votre session a expiré. Veuillez vous reconnecter.")
+    router.push("")
+  }, [router])
 
-  // Effect to clear success message after 5 seconds
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        setSuccess(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [success])
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     setLoading(true)
     try {
       const accessToken = await getAccessToken()
@@ -138,12 +127,20 @@ export default function AgentProfilePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [handleAuthError])
 
-  const handleAuthError = () => {
-    setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
-  }
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [success])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -166,7 +163,6 @@ export default function AgentProfilePage() {
         return
       }
 
-      // Convertir l'âge en nombre si présent
       const dataToSend = {
         ...formData,
         age: formData.age ? Number.parseInt(formData.age) : null,
@@ -206,7 +202,6 @@ export default function AgentProfilePage() {
       const file = e.target.files[0]
       setSelectedFile(file)
 
-      // Créer un aperçu de l'image
       const reader = new FileReader()
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string)
@@ -245,7 +240,6 @@ export default function AgentProfilePage() {
         throw new Error(`Erreur lors du téléchargement de la photo: ${response.status}`)
       }
 
-      // Rafraîchir le profil pour afficher la nouvelle photo
       await fetchProfile()
       setUploadDialogOpen(false)
       setSelectedFile(null)
@@ -281,7 +275,6 @@ export default function AgentProfilePage() {
         throw new Error(`Erreur lors de la suppression de la photo: ${response.status}`)
       }
 
-      // Mettre à jour le profil pour refléter la suppression
       await fetchProfile()
       setSuccess("Photo supprimée avec succès")
     } catch (error) {
@@ -294,7 +287,7 @@ export default function AgentProfilePage() {
     try {
       const date = parseISO(dateString)
       return format(date, "d MMMM yyyy", { locale: fr })
-    } catch (error) {
+    } catch {
       return "Date inconnue"
     }
   }
@@ -309,19 +302,6 @@ export default function AgentProfilePage() {
         return "animation"
       default:
         return type
-    }
-  }
-
-  const getPhotoTypeIcon = (type: string) => {
-    switch (type) {
-      case "profile":
-        return <User className="h-5 w-5" />
-      case "cover":
-        return <Image className="h-5 w-5" />
-      case "animation":
-        return <Play className="h-5 w-5" />
-      default:
-        return <Camera className="h-5 w-5" />
     }
   }
 
@@ -388,7 +368,7 @@ export default function AgentProfilePage() {
                         <div className="flex items-center">
                           <User className="h-5 w-5 text-gray-500 mr-3" />
                           <div>
-                            <p className="text-sm text-gray-500">Nom d'utilisateur</p>
+                            <p className="text-sm text-gray-500">Nom d&#39;utilisateur</p>
                             <p className="font-medium">{profile?.username}</p>
                           </div>
                         </div>
@@ -616,9 +596,7 @@ export default function AgentProfilePage() {
                   </Button>
                 </div>
 
-                {/* Nouvelle section pour afficher les 3 types de photos */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  {/* Photo de profil */}
                   <Card className="overflow-hidden">
                     <CardHeader className="bg-gray-50 p-3">
                       <CardTitle className="text-md flex items-center">
@@ -629,10 +607,12 @@ export default function AgentProfilePage() {
                     <div className="relative h-48 bg-gray-100">
                       {profile?.profile_photo ? (
                         <>
-                          <img
+                          <Image
                             src={profile.profile_photo.image_url || "/placeholder.svg"}
                             alt="Photo de profil"
-                            className="w-full h-full object-cover cursor-pointer"
+                            layout="fill"
+                            objectFit="cover"
+                            className="cursor-pointer"
                             onClick={() => setEnlargedPhoto(profile.profile_photo)}
                           />
                           <Button
@@ -669,21 +649,22 @@ export default function AgentProfilePage() {
                     )}
                   </Card>
 
-                  {/* Photo de couverture */}
                   <Card className="overflow-hidden">
                     <CardHeader className="bg-gray-50 p-3">
                       <CardTitle className="text-md flex items-center">
-                        <Image className="h-4 w-4 mr-2" />
+                        <ImageIcon className="h-4 w-4 mr-2" />
                         Photo de couverture
                       </CardTitle>
                     </CardHeader>
                     <div className="relative h-48 bg-gray-100">
                       {profile?.cover_photo ? (
                         <>
-                          <img
+                          <Image
                             src={profile.cover_photo.image_url || "/placeholder.svg"}
                             alt="Photo de couverture"
-                            className="w-full h-full object-cover cursor-pointer"
+                            layout="fill"
+                            objectFit="cover"
+                            className="cursor-pointer"
                             onClick={() => setEnlargedPhoto(profile.cover_photo)}
                           />
                           <Button
@@ -697,7 +678,7 @@ export default function AgentProfilePage() {
                         </>
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full">
-                          <Image className="h-12 w-12 text-gray-300 mb-2" />
+                          <ImageIcon className="h-12 w-12 text-gray-300 mb-2" />
                           <p className="text-sm text-gray-500">Aucune photo de couverture</p>
                           <Button
                             variant="outline"
@@ -720,21 +701,22 @@ export default function AgentProfilePage() {
                     )}
                   </Card>
 
-                  {/* Photo d'animation */}
                   <Card className="overflow-hidden">
                     <CardHeader className="bg-gray-50 p-3">
                       <CardTitle className="text-md flex items-center">
                         <Play className="h-4 w-4 mr-2" />
-                        Photo d'animation
+                        Photo d&#39;animation
                       </CardTitle>
                     </CardHeader>
                     <div className="relative h-48 bg-gray-100">
                       {profile?.animation_photo ? (
                         <>
-                          <img
+                          <Image
                             src={profile.animation_photo.image_url || "/placeholder.svg"}
                             alt="Photo d'animation"
-                            className="w-full h-full object-cover cursor-pointer"
+                            layout="fill"
+                            objectFit="cover"
+                            className="cursor-pointer"
                             onClick={() => setEnlargedPhoto(profile.animation_photo)}
                           />
                           <Button
@@ -749,7 +731,7 @@ export default function AgentProfilePage() {
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full">
                           <Play className="h-12 w-12 text-gray-300 mb-2" />
-                          <p className="text-sm text-gray-500">Aucune photo d'animation</p>
+                          <p className="text-sm text-gray-500">Aucune photo d&#39;animation</p>
                           <Button
                             variant="outline"
                             size="sm"
@@ -774,7 +756,6 @@ export default function AgentProfilePage() {
               </TabsContent>
             </Tabs>
 
-            {/* Affichage des messages d'erreur et de succès */}
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -808,7 +789,6 @@ export default function AgentProfilePage() {
         </Card>
       </motion.div>
 
-      {/* Dialog pour télécharger une photo */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -832,7 +812,7 @@ export default function AgentProfilePage() {
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="cover" id="cover" />
                   <Label htmlFor="cover" className="flex items-center">
-                    <Image className="h-4 w-4 mr-2" />
+                    <ImageIcon className="h-4 w-4 mr-2" />
                     Photo de couverture
                   </Label>
                 </div>
@@ -840,7 +820,7 @@ export default function AgentProfilePage() {
                   <RadioGroupItem value="animation" id="animation" />
                   <Label htmlFor="animation" className="flex items-center">
                     <Play className="h-4 w-4 mr-2" />
-                    Photo d'animation
+                    Photo d&#39;animation
                   </Label>
                 </div>
               </RadioGroup>
@@ -853,7 +833,12 @@ export default function AgentProfilePage() {
               >
                 {previewUrl ? (
                   <div className="relative w-full h-full">
-                    <img src={previewUrl || "/placeholder.svg"} alt="Aperçu" className="w-full h-full object-contain" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewUrl || "/placeholder.svg"}
+                      alt="Aperçu de la photo à télécharger"
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -887,7 +872,6 @@ export default function AgentProfilePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmation de suppression */}
       <Dialog open={photoToDelete !== null} onOpenChange={(open) => !open && setPhotoToDelete(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -915,15 +899,17 @@ export default function AgentProfilePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog pour afficher la photo en grand format */}
       <Dialog open={enlargedPhoto !== null} onOpenChange={(open) => !open && setEnlargedPhoto(null)}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] p-1 overflow-hidden">
           {enlargedPhoto && (
             <div className="relative w-full h-full max-h-[80vh] overflow-hidden">
-              <img
+              <Image
                 src={enlargedPhoto.image_url || "/placeholder.svg"}
                 alt="Photo agrandie"
-                className="w-full h-full object-contain"
+                width={800}
+                height={600}
+                objectFit="contain"
+                className="w-full h-full"
               />
               <Button
                 className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 rounded-full p-2"
@@ -939,4 +925,3 @@ export default function AgentProfilePage() {
     </div>
   )
 }
-
