@@ -33,7 +33,6 @@ interface Message {
   id: number
   sender: User
   sender_name?: string
-  receiver_id?: number
   receiver_name?: string
   content: string
   is_read: boolean
