@@ -108,7 +108,7 @@ export default function AgentMessagingPage() {
   }
 
   // Récupérer tous les utilisateurs (agents et admins)
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
