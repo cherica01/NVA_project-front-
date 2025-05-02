@@ -78,7 +78,7 @@ export default function AgentMessagingPage() {
   }, [router])
 
   // Récupérer l'utilisateur courant
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
