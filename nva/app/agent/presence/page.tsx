@@ -1,11 +1,11 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,8 +59,13 @@ interface PhotoUpload {
   error?: string
 }
 
-// Fonction pour vérifier si une valeur est un nombre valide
-const isValidNumber = (value: any): boolean => {
+interface DebugInfo {
+  request: { latitude: number; longitude: number; location_name: string; notes: string }
+  responseStatus: number
+  responseText: string
+}
+
+const isValidNumber = (value: unknown): boolean => {
   if (value === null || value === undefined) return false
   if (typeof value === "number") return !isNaN(value)
   if (typeof value === "string") {
@@ -70,33 +75,26 @@ const isValidNumber = (value: any): boolean => {
   return false
 }
 
-// Fonction pour formater un nombre avec un nombre spécifique de décimales
-const formatNumber = (value: any, decimals = 6): string => {
+const formatNumber = (value: number | string, decimals = 6): string => {
   if (!isValidNumber(value)) return "N/A"
 
   const num = typeof value === "string" ? Number.parseFloat(value) : value
   return num.toFixed(decimals)
 }
 
-// Remplacer la fonction getPhotoUrl par celle-ci:
 const getPhotoUrl = (photoPath: string | null): string => {
   if (!photoPath) return "/placeholder.svg"
 
-  // Si l'URL est déjà complète (commence par http ou https), la retourner telle quelle
   if (photoPath.startsWith("http")) return photoPath
 
-  // Si l'URL commence par /media, il s'agit d'un chemin relatif à la racine du serveur Django
   if (photoPath.startsWith("/media")) {
-    // Extraire le domaine de l'API URL
     const apiDomain = (apiUrl ?? "").split("/").slice(0, 3).join("/")
     return `${apiDomain}${photoPath}`
   }
 
-  // Sinon, préfixer avec l'URL de l'API complète
   return `${apiUrl}${photoPath}`
 }
 
-// Ajouter cette fonction pour le débogage des URLs
 const logPhotoUrls = (presence: Presence) => {
   if (presence.photos && presence.photos.length > 0) {
     console.log("URLs des photos pour la présence", presence.id)
@@ -121,67 +119,52 @@ export default function AgentPresencePage() {
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("submit")
-  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleAuthError = () => {
+  const handleAuthError = useCallback(() => {
     setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
-  }
+    router.push("")
+  }, [router])
 
-  useEffect(() => {
-    const fetchPresences = async () => {
-      setLoading(true)
-      try {
-        const accessToken = await getAccessToken()
-        if (!accessToken) {
+  const fetchPresences = useCallback(async () => {
+    setLoading(true)
+    try {
+      const accessToken = await getAccessToken()
+      if (!accessToken) {
+        handleAuthError()
+        return
+      }
+
+      const response = await fetch(`${apiUrl}/presence/agent/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
           handleAuthError()
           return
         }
-
-        const response = await fetch(`${apiUrl}/presence/agent/`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            handleAuthError()
-            return
-          }
-          throw new Error(`Erreur lors du chargement des présences: ${response.status}`)
-        }
-
-        const data = await response.json()
-        console.log("Présences récupérées:", data)
-
-        // Log des URLs des photos pour le débogage
-        if (data && data.length > 0) {
-          data.forEach((presence: Presence) => logPhotoUrls(presence))
-        }
-
-        setPresences(data)
-      } catch (error) {
-        console.error("Erreur lors du chargement des présences:", error)
-        setError("Impossible de charger vos données de présence")
-      } finally {
-        setLoading(false)
+        throw new Error(`Erreur lors du chargement des présences: ${response.status}`)
       }
-    }
-    fetchPresences()
-    getCurrentLocation()
-  }, [])
 
-  // Effect to clear success message after 5 seconds
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        setSuccess(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [success])
+      const data = await response.json()
+      console.log("Présences récupérées:", data)
 
-  const getCurrentLocation = () => {
+      if (data && data.length > 0) {
+        data.forEach((presence: Presence) => logPhotoUrls(presence))
+      }
+
+      setPresences(data)
+    } catch (error) {
+      console.error("Erreur lors du chargement des présences:", error)
+      setError("Impossible de charger vos données de présence")
+    } finally {
+      setLoading(false)
+    }
+  }, [handleAuthError])
+
+  const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setLocationError("La géolocalisation n'est pas prise en charge par votre navigateur")
       return
@@ -189,7 +172,6 @@ export default function AgentPresencePage() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        // Limiter à 6 décimales pour éviter l'erreur de validation
         const latitude = Number.parseFloat(position.coords.latitude.toFixed(6))
         const longitude = Number.parseFloat(position.coords.longitude.toFixed(6))
 
@@ -198,7 +180,6 @@ export default function AgentPresencePage() {
           longitude,
         })
         setLocationError(null)
-        // Essayer d'obtenir le nom de l'emplacement à partir des coordonnées
         fetchLocationName(latitude, longitude)
       },
       (error) => {
@@ -208,7 +189,21 @@ export default function AgentPresencePage() {
         )
       },
     )
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchPresences()
+    getCurrentLocation()
+  }, [fetchPresences, getCurrentLocation])
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [success])
 
   const fetchLocationName = async (latitude: number, longitude: number) => {
     try {
@@ -223,14 +218,12 @@ export default function AgentPresencePage() {
       }
     } catch (error) {
       console.error("Erreur lors de la récupération du nom de l'emplacement:", error)
-      // Ne pas définir d'erreur ici, car ce n'est pas critique
     }
   }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       Array.from(e.target.files).forEach((file) => {
-        // Créer un aperçu de l'image
         const reader = new FileReader()
         reader.onloadend = () => {
           const preview = reader.result as string
@@ -270,10 +263,8 @@ export default function AgentPresencePage() {
       const formData = new FormData()
       formData.append("photo", photo)
 
-      // Créer un XMLHttpRequest pour suivre la progression
       const xhr = new XMLHttpRequest()
 
-      // Promesse pour gérer la réponse
       const uploadPromise = new Promise<boolean>((resolve, reject) => {
         xhr.upload.addEventListener("progress", (event) => {
           if (event.lengthComputable) {
@@ -322,7 +313,6 @@ export default function AgentPresencePage() {
         })
       })
 
-      // Configurer et envoyer la requête
       xhr.open("POST", `${apiUrl}/presence/${presenceId}/upload-photo/`)
       xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`)
       xhr.send(formData)
@@ -365,8 +355,6 @@ export default function AgentPresencePage() {
         return
       }
 
-      // Étape 1: Créer la présence
-      // Assurez-vous que les coordonnées sont limitées à 6 décimales
       const presenceData = {
         latitude: Number.parseFloat(currentLocation.latitude.toFixed(6)),
         longitude: Number.parseFloat(currentLocation.longitude.toFixed(6)),
@@ -374,7 +362,6 @@ export default function AgentPresencePage() {
         notes: notes.trim(),
       }
 
-      // Débogage: Afficher les données envoyées
       console.log("Données de présence envoyées:", presenceData)
 
       const presenceResponse = await fetch(`${apiUrl}/presence/create/`, {
@@ -387,11 +374,9 @@ export default function AgentPresencePage() {
         body: JSON.stringify(presenceData),
       })
 
-      // Débogage: Afficher la réponse brute
       const responseText = await presenceResponse.text()
       console.log("Réponse brute du serveur:", responseText)
 
-      // Stocker les informations de débogage
       setDebugInfo({
         request: presenceData,
         responseStatus: presenceResponse.status,
@@ -406,7 +391,6 @@ export default function AgentPresencePage() {
         throw new Error(`Erreur lors de la création de la présence: ${responseText}`)
       }
 
-      // Convertir la réponse en JSON
       let presenceResult
       try {
         presenceResult = JSON.parse(responseText)
@@ -417,22 +401,18 @@ export default function AgentPresencePage() {
 
       console.log("Présence créée avec succès:", presenceResult)
 
-      // Étape 2: Si des photos sont sélectionnées, les télécharger
       if (photoUploads.length > 0) {
         console.log(`Début de l'upload de ${photoUploads.length} photos`)
 
-        // Upload des photos en séquence
         for (let i = 0; i < photoUploads.length; i++) {
           await uploadPhoto(presenceResult.id, photoUploads[i].file, i)
         }
       }
 
-      // Réinitialiser le formulaire
       setLocationName("")
       setNotes("")
       setPhotoUploads([])
 
-      // Rafraîchir la liste des présences
       const fetchPresences = async () => {
         setLoading(true)
         try {
@@ -457,7 +437,6 @@ export default function AgentPresencePage() {
           const data = await response.json()
           console.log("Présences récupérées:", data)
 
-          // Log des URLs des photos pour le débogage
           if (data && data.length > 0) {
             data.forEach((presence: Presence) => logPhotoUrls(presence))
           }
@@ -486,7 +465,7 @@ export default function AgentPresencePage() {
     try {
       const date = parseISO(dateString)
       return format(date, "d MMMM yyyy à HH:mm", { locale: fr })
-    } catch (error) {
+    } catch {
       return "Date invalide"
     }
   }
@@ -613,13 +592,14 @@ export default function AgentPresencePage() {
 
                       <div className="space-y-2">
                         <label htmlFor="location_name" className="text-sm font-medium">
-                          Nom de l'emplacement
+                          Nom de l emplacement
                         </label>
                         <Input
                           id="location_name"
                           value={locationName}
+                          readOnly
                           onChange={(e) => setLocationName(e.target.value)}
-                          placeholder="Entrez le nom de l'emplacement"
+                          placeholder="Nom de l'emplacement généré automatiquement..."
                           className="w-full"
                           required
                         />
@@ -648,7 +628,7 @@ export default function AgentPresencePage() {
                             className="hidden"
                             ref={fileInputRef}
                             onChange={handlePhotoChange}
-                            multiple // Permettre la sélection de plusieurs fichiers
+                            multiple
                           />
                           <Button
                             type="button"
@@ -671,6 +651,7 @@ export default function AgentPresencePage() {
                             {photoUploads.map((upload, index) => (
                               <div key={index} className="relative bg-gray-50 p-2 rounded-md">
                                 <div className="relative w-full h-32 bg-gray-100 rounded-md overflow-hidden">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={upload.preview || "/placeholder.svg"}
                                     alt={`Aperçu ${index + 1}`}
@@ -789,7 +770,6 @@ export default function AgentPresencePage() {
                           const data = await response.json()
                           console.log("Présences récupérées:", data)
 
-                          // Log des URLs des photos pour le débogage
                           if (data && data.length > 0) {
                             data.forEach((presence: Presence) => logPhotoUrls(presence))
                           }
@@ -820,7 +800,7 @@ export default function AgentPresencePage() {
                     <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune présence enregistrée</h3>
                     <p className="text-gray-500 max-w-md mx-auto">
-                      Vous n'avez pas encore soumis de présence. Utilisez l'onglet "Soumettre une présence" pour
+                      Vous n&#39;avez pas encore soumis de présence. Utilisez l&#39;onglet pour
                       enregistrer votre première présence.
                     </p>
                   </div>
@@ -868,12 +848,14 @@ export default function AgentPresencePage() {
                                     <div
                                       key={photo.id}
                                       className="relative h-32 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
-                                      onClick={() => setSelectedPresence(presence)}
                                     >
-                                      <img
+                                      <Image
                                         src={getPhotoUrl(photo.photo) || "/placeholder.svg"}
                                         alt="Photo de présence"
-                                        className="w-full h-full object-cover"
+                                        layout="fill"
+                                        objectFit="cover"
+                                        className="rounded-md"
+                                        onClick={() => setSelectedPresence(presence)}
                                       />
                                     </div>
                                   ))}
@@ -901,7 +883,6 @@ export default function AgentPresencePage() {
               </TabsContent>
             </Tabs>
 
-            {/* Affichage des informations de débogage */}
             {debugInfo && (
               <div className="mt-6 p-4 bg-gray-50 rounded-md border border-gray-200">
                 <div className="flex justify-between items-center mb-2">
@@ -929,7 +910,6 @@ export default function AgentPresencePage() {
               </div>
             )}
 
-            {/* Affichage des messages d'erreur et de succès */}
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -963,7 +943,6 @@ export default function AgentPresencePage() {
         </Card>
       </motion.div>
 
-      {/* Dialog pour afficher les détails d'une présence */}
       {selectedPresence && (
         <Dialog open={!!selectedPresence} onOpenChange={(open) => !open && setSelectedPresence(null)}>
           <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden flex flex-col">
@@ -972,7 +951,6 @@ export default function AgentPresencePage() {
             </DialogHeader>
 
             <div className="space-y-6 py-4 overflow-y-auto pr-2">
-              {/* Statut du jour */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Clock className="h-5 w-5 text-gray-500 mr-2" />
@@ -981,7 +959,6 @@ export default function AgentPresencePage() {
                 {getStatusBadge(selectedPresence.status)}
               </div>
 
-              {/* Emplacement */}
               {selectedPresence.location_name && (
                 <div className="space-y-2">
                   <h3 className="font-medium flex items-center">
@@ -1011,7 +988,6 @@ export default function AgentPresencePage() {
                           loading="eager"
                           onLoad={(e) => {
                             console.log("Carte chargée dans le dialogue")
-                            // Force un redimensionnement pour aider le rendu
                             const iframe = e.target as HTMLIFrameElement
                             if (iframe) {
                               setTimeout(() => {
@@ -1030,7 +1006,6 @@ export default function AgentPresencePage() {
                 </div>
               )}
 
-              {/* Notes */}
               {selectedPresence.notes && (
                 <div className="space-y-2">
                   <h3 className="font-medium flex items-center">
@@ -1041,7 +1016,6 @@ export default function AgentPresencePage() {
                 </div>
               )}
 
-              {/* Photos */}
               {selectedPresence.photos && selectedPresence.photos.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="font-medium flex items-center">
@@ -1051,9 +1025,12 @@ export default function AgentPresencePage() {
                   <div className="grid grid-cols-1 gap-4">
                     {selectedPresence.photos.map((photo) => (
                       <div key={photo.id} className="bg-gray-100 rounded-md overflow-hidden">
-                        <img
+                        <Image
                           src={getPhotoUrl(photo.photo) || "/placeholder.svg"}
                           alt="Photo de présence"
+                          width={500}
+                          height={300}
+                          objectFit="contain"
                           className="w-full h-auto"
                         />
                         <div className="p-2 bg-gray-50 text-xs text-gray-500">
@@ -1077,4 +1054,3 @@ export default function AgentPresencePage() {
     </div>
   )
 }
-
