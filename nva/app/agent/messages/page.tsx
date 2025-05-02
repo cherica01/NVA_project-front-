@@ -75,6 +75,7 @@ export default function AgentMessagingPage() {
   const handleAuthError = useCallback(() => {
     setError("Votre session a expiré. Veuillez vous reconnecter.")
     router.push("")
+  }, [router])
 
   // Récupérer l'utilisateur courant
   const fetchCurrentUser = async () => {
