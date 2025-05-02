@@ -74,6 +74,7 @@ export default function AgentMessagingPage() {
 
 
   const handleAuthError = useCallback(() => {
+    router.push("")
 
   // Récupérer l'utilisateur courant
   const fetchCurrentUser = async () => {
