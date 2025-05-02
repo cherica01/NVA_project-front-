@@ -42,7 +42,7 @@ interface Message {
 
 interface Conversation {
   id: number
-  participants?: User[]
+  participants: User[]
   participant1?: User
   participant2?: User
   created_at: string
