@@ -13,6 +13,7 @@ import { getAccessToken } from "@/util/biscuit"
 import { toast } from "@/hooks/use-toast"
 import { apiUrl } from "@/util/config"
 
+interface EventActionData {
   title: string
   status?: string
   date: string
@@ -45,6 +46,9 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
     {
       id: "welcome",
       content:
+        userRole === "admin"
+          ? "Bonjour, Administrateur ! Je suis votre assistant virtuel. Comment puis-je vous aider avec la gestion aujourd'hui ?"
+          : "Bonjour ! Je suis votre assistant virtuel. Comment puis-je vous aider aujourd'hui ?",
       sender: "bot",
       timestamp: new Date(),
     },
@@ -54,12 +58,10 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom()
   }, [messages])
 
-  // Focus input when chat is opened
   useEffect(() => {
     if (isOpen && !isMinimized) {
       inputRef.current?.focus()
@@ -88,7 +90,6 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
   const handleSendMessage = async () => {
     if (!message.trim()) return
 
-    // Add user message to chat
     const userMessage: Message = {
       id: Date.now().toString(),
       content: message,
@@ -100,10 +101,8 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
     setIsLoading(true)
 
     try {
-      // Get access token for authentication
       const accessToken = await getAccessToken()
 
-      // Call the chatbot API endpoint
       const response = await fetch(`${apiUrl}/messaging/chatbot/`, {
         method: "POST",
         headers: {
@@ -112,6 +111,7 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
         },
         body: JSON.stringify({
           message: userMessage.content,
+          userRole, // Passer userRole à l'API si nécessaire
         }),
       })
 
@@ -121,7 +121,6 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
 
       const data = await response.json()
 
-      // Add bot response to chat
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: data.response,
@@ -134,14 +133,12 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
 
       setMessages((prev) => [...prev, botMessage])
 
-      // If chat is minimized, increment unread count
       if (isMinimized) {
         setUnreadCount((prev) => prev + 1)
       }
     } catch (error) {
       console.error("Erreur lors de l'envoi du message:", error)
 
-      // Add error message
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content:
@@ -165,8 +162,7 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   }
 
-  // Render event details card when action is "show_event"
-  const renderEventCard = (actionData: any) => {
+  const renderEventCard = (actionData: EventActionData) => {
     if (!actionData) return null
 
     return (
@@ -204,7 +200,7 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
             <div className="mt-2">
               <span className="text-xs text-gray-500 dark:text-gray-400">Agents assignés:</span>
               <div className="flex flex-wrap gap-1 mt-1">
-                {actionData.agents.map((agent: string, index: number) => (
+                {actionData.agents.map((agent, index) => (
                   <Badge key={index} variant="secondary" className="text-xs">
                     {agent}
                   </Badge>
@@ -219,7 +215,6 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
 
   return (
     <>
-      {/* Chatbot button */}
       <motion.div
         className="fixed bottom-6 right-6 z-50"
         initial={{ scale: 0.8, opacity: 0 }}
@@ -247,7 +242,6 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
         </Button>
       </motion.div>
 
-      {/* Chatbot interface */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -308,10 +302,9 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
                                     {formatTime(msg.timestamp)}
                                   </p>
 
-                                  {/* Render action content if available */}
                                   {msg.sender === "bot" &&
                                     msg.action === "show_event" &&
-                                    renderEventCard(msg.actionData)}
+                                    renderEventCard(msg.actionData!)}
                                 </div>
                                 {msg.sender === "user" && (
                                   <Avatar className="h-8 w-8">
