@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -36,12 +36,12 @@ export default function AgentWalletPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchAgentTotal()
-    fetchPaymentHistory()
-  }, [])
+  const handleAuthError = useCallback(() => {
+    setError("Votre session a expiré. Veuillez vous reconnecter.")
+    router.push("")
+  }, [router])
 
-  const fetchAgentTotal = async () => {
+  const fetchAgentTotal = useCallback(async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
@@ -67,9 +67,9 @@ export default function AgentWalletPage() {
       console.error("Erreur lors du chargement du solde:", error)
       setError("Impossible de charger votre solde")
     }
-  }
+  }, [handleAuthError])
 
-  const fetchPaymentHistory = async () => {
+  const fetchPaymentHistory = useCallback(async () => {
     try {
       const accessToken = await getAccessToken()
       if (!accessToken) {
@@ -97,32 +97,29 @@ export default function AgentWalletPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [handleAuthError])
 
-  const handleAuthError = () => {
-    setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
-  }
+  useEffect(() => {
+    fetchAgentTotal()
+    fetchPaymentHistory()
+  }, [fetchAgentTotal, fetchPaymentHistory])
 
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "Pp", { locale: fr })
-    } catch (error) {
+    } catch {
       return "Date invalide"
     }
   }
 
-  // Fonction pour formater le montant total en toute sécurité
   const formatAmount = (value: number | string | undefined | null) => {
     if (value === undefined || value === null) return "0.00"
 
-    // Si c'est déjà une chaîne, essayer de la convertir en nombre
     if (typeof value === "string") {
       const parsed = Number.parseFloat(value)
       return isNaN(parsed) ? "0.00" : parsed.toFixed(2)
     }
 
-    // Si c'est un nombre
     return value.toFixed(2)
   }
 
@@ -134,7 +131,6 @@ export default function AgentWalletPage() {
     )
   }
 
-  // Récupérer les 3 derniers paiements pour l'affichage
   const recentPayments = [...payments]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 3)
@@ -253,9 +249,7 @@ export default function AgentWalletPage() {
                     <TableRow key={payment.id} className="hover:bg-green-50 dark:hover:bg-green-800/50">
                       <TableCell>
                         <Badge
-                          className={`${
-                            payment.amount >= 0 ? "bg-green-300 text-green-900" : "bg-red-300 text-red-900"
-                          } dark:bg-green-700 dark:text-white`}
+                          className={`${payment.amount >= 0 ? "bg-green-300 text-green-900" : "bg-red-300 text-red-900"} dark:bg-green-700 dark:text-white`}
                         >
                           {payment.amount >= 0 ? "+" : "-"}
                           {Math.abs(payment.amount).toFixed(2)} €
@@ -285,4 +279,3 @@ export default function AgentWalletPage() {
     </div>
   )
 }
-
