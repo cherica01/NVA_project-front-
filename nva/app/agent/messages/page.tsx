@@ -73,6 +73,7 @@ export default function AgentMessagingPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
 
 
+  const handleAuthError = useCallback(() => {
 
   // Récupérer l'utilisateur courant
   const fetchCurrentUser = async () => {
