@@ -210,7 +210,7 @@ export default function AgentWalletPage() {
                         className={payment.amount >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
                       >
                         {payment.amount >= 0 ? "+" : "-"}
-                        {Math.abs(payment.amount).toFixed(2)} €
+                        {Math.abs(payment.amount).toFixed(2)} AR
                       </Badge>
                     </div>
                   ))
@@ -252,7 +252,7 @@ export default function AgentWalletPage() {
                           className={`${payment.amount >= 0 ? "bg-green-300 text-green-900" : "bg-red-300 text-red-900"} dark:bg-green-700 dark:text-white`}
                         >
                           {payment.amount >= 0 ? "+" : "-"}
-                          {Math.abs(payment.amount).toFixed(2)} €
+                          {Math.abs(payment.amount).toFixed(2)} AR
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -267,7 +267,7 @@ export default function AgentWalletPage() {
                       <TableCell>{payment.work_days || "-"}</TableCell>
                       <TableCell>{payment.description || "-"}</TableCell>
                       <TableCell>{formatDate(payment.created_at)}</TableCell>
-                      <TableCell className="font-medium">{formatAmount(payment.total_payment)} €</TableCell>
+                      <TableCell className="font-medium">{formatAmount(payment.total_payment)} AR</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
