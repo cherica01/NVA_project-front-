@@ -1607,87 +1607,88 @@ export default function AgentEvaluation() {
   // Fonction pour exporter les données en CSV
 
   const exportToCSVFallback = () => {
-
-    // Créer les en-têtes CSV
-
+    // Ajouter un titre pour le fichier
+    const title = `"ÉVALUATION DES AGENTS - ${formatMonth(selectedMonth).toUpperCase()}"`;
+  
+    // Créer les en-têtes CSV en majuscules, entourés de guillemets
     const headers = [
-
-      "Agent",
-
-      "Produits vendus",
-
-      "Événements",
-
-      "Taux de présence",
-
-      "Présences",
-
-      "Absences",
-
-      "Revenus générés",
-
-      "Satisfaction",
-
-    ].join(",")
-
-
-
-    // Créer les lignes de données
-
+      "AGENT",
+      "PRODUITS VENDUS",
+      "ÉVÉNEMENTS",
+      "TAUX DE PRÉSENCE",
+      "PRÉSENCES",
+      "ABSENCES",
+      "REVENUS GÉNÉRÉS",
+      "SATISFACTION",
+    ].map((header) => `"${header}"`).join(",");
+  
+    // Créer les lignes de données, entourer chaque valeur de guillemets
     const rows = performances.map((p) =>
-
       [
-
-        p.agent_username,
-
-        p.products_sold,
-
-        p.events_count,
-
-        `${p.presence_rate}%`,
-
-        p.presence_count,
-
-        p.absence_count,
-
-        `${p.revenue_generated}`,
-
-        p.satisfaction_score,
-
+        `"${p.agent_username}"`, // Guillemets pour gérer les virgules dans les noms
+        `"${p.products_sold}"`,
+        `"${p.events_count}"`,
+        `"${p.presence_rate}%"`,
+        `"${p.presence_count}"`,
+        `"${p.absence_count}"`,
+        `"${p.revenue_generated} ${CURRENCY}"`,
+        `"${p.satisfaction_score}/5"`, // Ajout de "/5" pour plus de clarté
       ].join(","),
-
-    )
-
-
-
-    // Assembler le CSV
-
-    const csv = [headers, ...rows].join("\n")
-
-
-
+    );
+  
+    // Calculer les totaux pour un résumé
+    const totalProducts = performances.reduce((sum, p) => sum + p.products_sold, 0);
+    const totalEvents = performances.reduce((sum, p) => sum + p.events_count, 0);
+    const totalRevenue = performances.reduce((sum, p) => sum + (p.revenue_generated ?? 0), 0);
+    const avgPresenceRate =
+      performances.length > 0
+        ? Math.round(performances.reduce((sum, p) => sum + p.presence_rate, 0) / performances.length)
+        : 0;
+    const totalPresences = performances.reduce((sum, p) => sum + p.presence_count, 0);
+    const totalAbsences = performances.reduce((sum, p) => sum + p.absence_count, 0);
+    const avgSatisfaction =
+      performances.length > 0
+        ? Math.round(
+            performances.reduce(
+              (sum, p) => sum + (p.satisfaction_score || 0),
+              0
+            ) / performances.length
+          )
+        : 0;
+  
+    // Créer une ligne de résumé
+    const summary = [
+      `"TOTAUX"`,
+      `"${totalProducts}"`,
+      `"${totalEvents}"`,
+      `"${avgPresenceRate}%"`,
+      `"${totalPresences}"`,
+      `"${totalAbsences}"`,
+      `"${totalRevenue} ${CURRENCY}"`,
+      `"${avgSatisfaction}/5"`,
+    ].join(",");
+  
+    // Assembler le CSV avec une structure claire
+    const csv = [
+      title, // Titre
+      "",    // Ligne vide pour séparation
+      headers, // En-têtes
+      ...rows, // Données
+      "",      // Ligne vide pour séparation
+      summary, // Résumé des totaux
+    ].join("\n");
+  
     // Créer un blob et un lien de téléchargement
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-
-    const url = URL.createObjectURL(blob)
-
-    const link = document.createElement("a")
-
-    link.setAttribute("href", url)
-
-    link.setAttribute("download", `evaluation-agents-${selectedMonth}.csv`)
-
-    link.style.visibility = "hidden"
-
-    document.body.appendChild(link)
-
-    link.click()
-
-    document.body.removeChild(link)
-
-  }
-
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `evaluation-agents-${selectedMonth}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
 
   // Fonction pour obtenir les données filtrées
@@ -1982,39 +1983,23 @@ export default function AgentEvaluation() {
 
         <div className="flex flex-col sm:flex-row gap-2">
 
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-
-            <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
-
-              <SelectValue placeholder="Sélectionner un mois" />
-
-            </SelectTrigger>
-
-            <SelectContent>
-
-              {Array.from({ length: 12 }, (_, i) => {
-
-                const date = subMonths(new Date(), i)
-
-                const value = format(date, "yyyy-MM")
-
-                const label = format(date, "MMMM yyyy", { locale: fr })
-
-                return (
-
-                  <SelectItem key={value} value={value}>
-
-                    {label}
-
-                  </SelectItem>
-
-                )
-
-              })}
-
-            </SelectContent>
-
-          </Select>
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+  <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
+    <SelectValue placeholder="Sélectionner un mois" />
+  </SelectTrigger>
+  <SelectContent className="bg-white dark:bg-gray-800 text-black dark:text-white">
+    {Array.from({ length: 12 }, (_, i) => {
+      const date = subMonths(new Date(), i);
+      const value = format(date, "yyyy-MM");
+      const label = format(date, "MMMM yyyy", { locale: fr });
+      return (
+        <SelectItem key={value} value={value}>
+          {label}
+        </SelectItem>
+      );
+    })}
+  </SelectContent>
+</Select>
 
 
 
@@ -3112,31 +3097,20 @@ export default function AgentEvaluation() {
 
                 <div className="flex items-center gap-2">
 
+
                   <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-
-                    <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
-
-                      <SelectValue placeholder="Tous les agents" />
-
-                    </SelectTrigger>
-
-                    <SelectContent>
-
-                      <SelectItem value="all">Tous les agents</SelectItem>
-
-                      {agents.map((agent) => (
-
-                        <SelectItem key={agent.id} value={agent.id.toString()}>
-
-                          {agent.username}
-
-                        </SelectItem>
-
-                      ))}
-
-                    </SelectContent>
-
-                  </Select>
+                        <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
+                        <SelectValue placeholder="Tous les agents" />
+                       </SelectTrigger>
+                                        <SelectContent className="bg-white dark:bg-gray-800 text-black dark:text-white">
+                                          <SelectItem value="all">Tous les agents</SelectItem>
+                                          {agents.map((agent) => (
+                                            <SelectItem key={agent.id} value={agent.id.toString()}>
+                                              {agent.username}
+                                            </SelectItem>
+                                          ))}
+                          </SelectContent>
+                        </Select>
 
                 </div>
 
