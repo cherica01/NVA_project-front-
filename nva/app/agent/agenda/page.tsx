@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { format, addMonths, subMonths, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
@@ -48,21 +48,12 @@ export default function AgentAgendaPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [selectedDay, setSelectedDay] = useState<Day | null>(null)
 
-  useEffect(() => {
-    fetchMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1)
-  }, [currentDate])
+  const handleAuthError = useCallback(() => {
+    setError("Votre session a expiré. Veuillez vous reconnecter.")
+    router.push("/")
+  }, [router])
 
-  // Effect to clear success message after 5 seconds
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        setSuccess(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [success])
-
-  const fetchMonthData = async (year: number, month: number) => {
+  const fetchMonthData = useCallback(async (year: number, month: number) => {
     setLoading(true)
     try {
       const accessToken = await getAccessToken()
@@ -85,6 +76,11 @@ export default function AgentAgendaPage() {
 
       const data = await response.json()
 
+      // Marquer automatiquement les jours avec des événements comme indisponibles
+      if (data && data.days) {
+        data.days = data.days.map((day: Day) => ({
+          ...day,
+          is_available: day.events.length === 0, // Disponible seulement s'il n'y a pas d'événements
         }))
       }
 
@@ -95,12 +91,20 @@ export default function AgentAgendaPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [handleAuthError])
 
-  const handleAuthError = () => {
-    setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
-  }
+  useEffect(() => {
+    fetchMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1)
+  }, [currentDate, fetchMonthData])
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [success])
 
   const handlePreviousMonth = () => {
     setCurrentDate(subMonths(currentDate, 1))
@@ -110,302 +114,282 @@ export default function AgentAgendaPage() {
     setCurrentDate(addMonths(currentDate, 1))
   }
 
-  const handleEventClick = (event: Event) => {
-    setSelectedEvent(event)
-    setShowEventDetail(true)
-  }
-
   const handleDayClick = (day: Day) => {
     setSelectedDay(day)
-    setShowAvailabilityDialog(true)
   }
 
-  const handleAvailabilityUpdated = () => {
-    // Rafraîchir les données du mois après la mise à jour de la disponibilité
-    fetchMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1)
+  const formatMonthYear = (date: Date) => {
+    return format(date, "MMMM yyyy", { locale: fr })
   }
 
-  const renderCalendar = () => {
-    if (!monthData) return null
+  const formatDate = (dateString: string) => {
+    const date = parseISO(dateString)
+    return format(date, "d MMMM yyyy", { locale: fr })
+  }
 
-    // Créer un tableau pour les jours de la semaine
-    const weekDays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+  const formatDateTime = (dateString: string) => {
+    const date = parseISO(dateString)
+    return format(date, "d MMM yyyy HH:mm", { locale: fr })
+  }
 
-    // Déterminer le premier jour du mois (0 = Dimanche, 1 = Lundi, etc.)
-    const firstDayOfMonth = new Date(monthData.year, monthData.month - 1, 1).getDay()
-    // Ajuster pour que la semaine commence le lundi (0 = Lundi, 6 = Dimanche)
-    const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1
-
-    // Créer un tableau pour tous les jours du mois avec des espaces vides pour l'alignement
-    const calendarDays: (Day | null)[] = []
-
-    // Ajouter des espaces vides pour les jours avant le début du mois
-    for (let i = 0; i < adjustedFirstDay; i++) {
-      calendarDays.push(null)
-    }
-
-    // Ajouter les jours du mois
+  const getMonthSummary = () => {
+    if (!monthData || !monthData.days) return null;
+  
+    // Dédupliquer les événements en fonction de leur id
+    const uniqueEvents = new Set<number>();
     monthData.days.forEach((day) => {
-      calendarDays.push(day)
-    })
+      day.events.forEach((event) => {
+        uniqueEvents.add(event.id);
+      });
+    });
+    const totalEvents = uniqueEvents.size; // Nombre d'événements uniques
+  
+    // Compter les jours avec des événements (jours occupés)
+    const daysWithEvents = monthData.days.filter((day) => day.events.length > 0).length;
+  
+    // Collecter les lieux uniques
+    const eventLocations = new Set<string>();
+    monthData.days.forEach((day) => {
+      day.events.forEach((event) => {
+        eventLocations.add(event.location);
+      });
+    });
+  
+    return {
+      totalEvents, // Maintenant basé sur les événements uniques
+      daysWithEvents,
+      eventLocations: Array.from(eventLocations),
+    };
+  };
 
-    // Diviser les jours en semaines
-    const weeks = []
-    for (let i = 0; i < calendarDays.length; i += 7) {
-      weeks.push(calendarDays.slice(i, i + 7))
-    }
-
-    return (
-      <div className="mt-4">
-        {/* En-tête des jours de la semaine */}
-        <div className="grid grid-cols-7 gap-1 mb-1">
-          {weekDays.map((day, index) => (
-            <div
-              key={index}
-              className={`text-center py-2 font-medium text-sm ${index >= 5 ? "text-red-500" : "text-gray-700"}`}
-            >
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* Grille du calendrier */}
-        <div className="grid grid-cols-7 gap-1">
-          {weeks.map((week, weekIndex) =>
-            week.map((day, dayIndex) => {
-              if (!day) {
-                return <div key={`empty-${weekIndex}-${dayIndex}`} className="h-24 bg-gray-100 rounded-md"></div>
-              }
-
-              const date = parseISO(day.date)
-              const isCurrentMonth = isSameMonth(date, currentDate)
-
-              return (
-                <motion.div
-                  key={day.date}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`
-                    h-24 p-1 rounded-md overflow-hidden cursor-pointer relative
-                    ${day.is_weekend ? "bg-gray-100" : "bg-white"}
-                    ${day.is_today ? "ring-2 ring-green-500" : ""}
-                    ${!day.is_available ? "border-l-4 border-red-500" : ""}
-                    shadow-sm hover:shadow-md transition-shadow
-                  `}
-                  onClick={() => handleDayClick(day)}
-                >
-                  <div className="flex justify-between items-start">
-                    <span
-                      className={`
-                        font-medium text-sm rounded-full w-6 h-6 flex items-center justify-center
-                        ${day.is_today ? "bg-green-500 text-white" : ""}
-                      `}
-                    >
-                      {day.day}
-                    </span>
-                    {!day.is_available && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <XCircle className="h-4 w-4 text-red-500" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Non disponible</p>
-                            {day.note && <p className="text-xs">{day.note}</p>}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </div>
-
-                  <div className="mt-1 space-y-1 overflow-hidden max-h-[calc(100%-24px)]">
-                    {day.events.slice(0, 2).map((event, index) => (
-                      <div
-                        key={`${event.id}-${index}`}
-                        className="bg-green-100 text-green-800 text-xs p-1 rounded truncate"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEventClick(event)
-                        }}
-                      >
-                        {event.title}
-                      </div>
-                    ))}
-                    {day.events.length > 2 && (
-                      <div className="text-xs text-gray-500 pl-1">+{day.events.length - 2} autres</div>
-                    )}
-                  </div>
-                </motion.div>
-              )
-            }),
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  const renderListView = () => {
-    if (!monthData) return null
-
-    // Filtrer les jours avec des événements
-    const daysWithEvents = monthData.days.filter((day) => day.events.length > 0)
-
-    if (daysWithEvents.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <CalendarIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-          <p className="text-gray-500">Aucun événement ce mois-ci</p>
-        </div>
-      )
-    }
-
-    return (
-      <ScrollArea className="h-[calc(100vh-300px)]">
-        <div className="space-y-4 p-2">
-          {daysWithEvents.map((day) => (
-            <Card key={day.date} className={`${day.is_today ? "border-green-500" : ""}`}>
-              <CardHeader className="py-3">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-base flex items-center">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    {format(parseISO(day.date), "EEEE d MMMM", { locale: fr })}
-                  </CardTitle>
-                  {day.is_today && <Badge className="bg-green-500">Aujourd'hui</Badge>}
-                  {!day.is_available && <Badge variant="destructive">Non disponible</Badge>}
-                </div>
-              </CardHeader>
-              <CardContent className="py-0">
-                <div className="space-y-3">
-                  {day.events.map((event) => (
-                    <motion.div
-                      key={event.id}
-                      whileHover={{ scale: 1.01 }}
-                      className="p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleEventClick(event)}
-                    >
-                      <h4 className="font-medium text-green-800">{event.title}</h4>
-                      <div className="mt-2 space-y-1 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {event.location}
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {format(parseISO(event.start_date), "HH:mm")} - {format(parseISO(event.end_date), "HH:mm")}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </ScrollArea>
-    )
-  }
+  const monthSummary = getMonthSummary()
 
   return (
     <div className="p-6 min-h-screen bg-gray-200">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card className="backdrop-blur-lg bg-white/90 border-none shadow-lg">
           <CardHeader className="bg-green-800 text-white px-6 py-4">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-2xl font-bold flex items-center">
-                <Calendar className="mr-3 h-7 w-7" />
-                <span>Agenda</span>
-              </CardTitle>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-white border-white hover:bg-green-700"
-                  onClick={() => setShowPreferencesDialog(true)}
-                >
-                  <Settings className="h-4 w-4 mr-1" />
-                  Préférences
-                </Button>
-              </div>
-            </div>
+            <CardTitle className="text-2xl font-bold flex items-center">
+              <Calendar className="mr-3 h-7 w-7" />
+              Agenda
+            </CardTitle>
+            <CardDescription className="text-green-100">Consultez vos événements programmés</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+            <div className="flex justify-between items-center mb-4">
+              <Button variant="outline" onClick={handlePreviousMonth}>
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Mois précédent
+              </Button>
+              <h2 className="text-xl font-semibold capitalize">{formatMonthYear(currentDate)}</h2>
+              <Button variant="outline" onClick={handleNextMonth}>
+                Mois suivant
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+              </div>
+            ) : monthData ? (
+              <div className="grid grid-cols-7 gap-2">
+                {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => (
+                  <div key={day} className="text-center font-semibold p-2">
+                    {day}
+                  </div>
+                ))}
+
+                {Array.from({ length: new Date(monthData.year, monthData.month - 1, 1).getDay() - 1 }, (_, i) => (
+                  <div key={`empty-${i}`} className="p-2"></div>
+                ))}
+
+                {monthData.days.map((day) => (
+                  <motion.div
+                    key={day.date}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`
+                      p-2 rounded-md cursor-pointer border
+                      ${day.is_today ? "border-green-500" : "border-gray-200"}
+                      ${day.is_weekend ? "bg-gray-50" : "bg-white"}
+                      ${!day.is_available ? "bg-red-50" : ""}
+                      ${day.events.length > 0 ? "bg-red-50" : ""}
+                    `}
+                    onClick={() => handleDayClick(day)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className={`font-medium ${day.is_today ? "text-green-600" : ""}`}>{day.day}</span>
+                      {day.events.length > 0 && <Badge className="bg-red-600">{day.events.length}</Badge>}
+                    </div>
+                    {day.events.length > 0 && (
+                      <Badge variant="outline" className="mt-1 text-red-500 border-red-200 text-xs">
+                        Indisponible
+                      </Badge>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Aucune donnée disponible</p>
+              </div>
             )}
 
-            <div className="flex justify-between items-center mb-6">
-              <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
-                <ChevronLeft className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Mois précédent</span>
-              </Button>
-              <h2 className="text-xl font-bold text-center">{format(currentDate, "MMMM yyyy", { locale: fr })}</h2>
-              <Button variant="outline" size="sm" onClick={handleNextMonth}>
-                <span className="mr-1 hidden sm:inline">Mois suivant</span>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            {monthSummary && (
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <BarChart className="h-5 w-5 mr-2 text-green-600" />
+                  Récapitulatif du mois
+                </h3>
 
-            <Tabs defaultValue="month" className="w-full" onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="month">Vue Calendrier</TabsTrigger>
-                <TabsTrigger value="list">Vue Liste</TabsTrigger>
-              </TabsList>
-              <TabsContent value="month" className="mt-0">
-                {loading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-                  </div>
-                ) : (
-                  renderCalendar()
-                )}
-              </TabsContent>
-              <TabsContent value="list" className="mt-0">
-                {loading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-                  </div>
-                ) : (
-                  renderListView()
-                )}
-              </TabsContent>
-            </Tabs>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <Card className="bg-green-50">
+    <CardContent className="pt-6">
+      <div className="text-center">
+        <p className="text-3xl font-bold text-green-700">{monthSummary.totalEvents}</p>
+        <p className="text-sm text-green-600 mt-1">Événements distincts</p>
+      </div>
+    </CardContent>
+  </Card>
 
-            <div className="mt-6 flex flex-wrap gap-4">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-100 rounded mr-2"></div>
-                <span className="text-sm">Événement</span>
+  <Card className="bg-green-50">
+    <CardContent className="pt-6">
+      <div className="text-center">
+        <p className="text-3xl font-bold text-green-700">{monthSummary.daysWithEvents}</p>
+        <p className="text-sm text-green-600 mt-1">Jours occupés par des événements</p>
+      </div>
+    </CardContent>
+  </Card>
+
+  <Card className="bg-green-50">
+    <CardContent className="pt-6">
+      <div className="text-center">
+        <p className="text-3xl font-bold text-green-700">{monthSummary.eventLocations.length}</p>
+        <p className="text-sm text-green-600 mt-1">Lieux différents</p>
+      </div>
+    </CardContent>
+  </Card>
+</div>
+
+                {monthSummary.eventLocations.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2">Lieux des événements :</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {monthSummary.eventLocations.map((location, index) => (
+                        <Badge key={index} className="bg-gray-100 text-gray-800">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {location}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 border-l-4 border-red-500 rounded mr-2"></div>
-                <span className="text-sm">Non disponible</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 ring-2 ring-green-500 rounded mr-2"></div>
-                <span className="text-sm">Aujourd'hui</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-gray-100 rounded mr-2"></div>
-                <span className="text-sm">Weekend</span>
-              </div>
-            </div>
+            )}
+
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mt-4"
+                >
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                </motion.div>
+              )}
+
+              {success && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mt-4"
+                >
+                  <Alert className="bg-green-100 text-green-800 border-green-200">
+                    <AlertDescription>{success}</AlertDescription>
+                  </Alert>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Dialogs */}
-      <EventDetailDialog event={selectedEvent} open={showEventDetail} onOpenChange={setShowEventDetail} />
+      {selectedDay && (
+        <Dialog open={!!selectedDay} onOpenChange={(open) => !open && setSelectedDay(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl">{formatDate(selectedDay.date)}</DialogTitle>
+            </DialogHeader>
 
-      <AvailabilityDialog
-        day={selectedDay}
-        open={showAvailabilityDialog}
-        onOpenChange={setShowAvailabilityDialog}
-        onAvailabilityUpdated={handleAvailabilityUpdated}
-      />
+            <div className="space-y-6 py-4">
+              <div className="flex items-center">
+                {selectedDay.events.length > 0 ? (
+                  <Badge className="bg-red-100 text-red-800 flex items-center px-3 py-1">
+                    <X className="h-4 w-4 mr-2" />
+                    Indisponible - Événement(s) programmé(s)
+                  </Badge>
+                ) : (
+                  <Badge className="bg-green-100 text-green-800 flex items-center px-3 py-1">
+                    <Check className="h-4 w-4 mr-2" />
+                    Disponible
+                  </Badge>
+                )}
+              </div>
 
-      <PreferencesDialog open={showPreferencesDialog} onOpenChange={setShowPreferencesDialog} />
+              <div>
+                <h3 className="font-medium mb-2 flex items-center">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Événements
+                </h3>
+                {selectedDay.events.length > 0 ? (
+                  <ScrollArea className="h-60">
+                    <div className="space-y-3">
+                      {selectedDay.events.map((event) => (
+                        <Card key={event.id} className="p-3">
+                          <div className="space-y-1">
+                            <h4 className="font-medium">{event.title}</h4>
+                            <div className="flex items-center text-sm text-gray-500">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              {event.location}
+                            </div>
+                            <div className="flex items-center text-sm text-gray-500">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {formatDateTime(event.start_date)} - {formatDateTime(event.end_date)}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <p className="text-gray-500 text-sm">Aucun événement prévu pour cette journée</p>
+                )}
+              </div>
+
+              {selectedDay.note && (
+                <div>
+                  <h3 className="font-medium mb-2 flex items-center">
+                    <Info className="h-4 w-4 mr-2" />
+                    Note
+                  </h3>
+                  <p className="text-gray-700 bg-gray-50 p-3 rounded-md">{selectedDay.note}</p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => setSelectedDay(null)} className="bg-green-600 hover:bg-green-700">
+                Fermer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
-
