@@ -434,140 +434,147 @@ export default function EventManagement() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <div>
-                      <Calendar
-                        mode="single"
-                        selected={newEvent.start_date ? new Date(newEvent.start_date) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            const now = new Date()
-                            date.setHours(now.getHours(), now.getMinutes())
-                            const formattedDate = date.toISOString()
-                            setNewEvent({ ...newEvent, start_date: formattedDate })
-                            setErrors({ ...errors, start_date: validateField("start_date", formattedDate) })
-                            if (newEvent.end_date) {
-                              fetchAvailableAgents(formattedDate, newEvent.end_date)
-                            }
-                          }
-                        }}
-                        initialFocus
-                      />
-                      <div className="p-3 border-t border-border">
-                        <Input
-                          type="time"
-                          value={newEvent.start_date ? format(new Date(newEvent.start_date), "HH:mm") : ""}
-                          onChange={(e) => {
-                            const [hours, minutes] = e.target.value.split(":")
-                            const newDate = new Date(newEvent.start_date || new Date())
-                            newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes))
-                            const formattedDate = newDate.toISOString()
-                            setNewEvent({ ...newEvent, start_date: formattedDate })
-                            if (newEvent.end_date) {
-                              fetchAvailableAgents(formattedDate, newEvent.end_date)
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-md shadow-md">
+  <Calendar
+    mode="single"
+    selected={newEvent.start_date ? new Date(newEvent.start_date) : undefined}
+    onSelect={(date) => {
+      if (date) {
+        const now = new Date();
+        date.setHours(now.getHours(), now.getMinutes());
+        const formattedDate = date.toISOString();
+        setNewEvent({ ...newEvent, start_date: formattedDate });
+        setErrors({ ...errors, start_date: validateField("start_date", formattedDate) });
+        if (newEvent.end_date) {
+          fetchAvailableAgents(formattedDate, newEvent.end_date);
+        }
+      }
+    }}
+    initialFocus
+    className="bg-white dark:bg-gray-800 text-black dark:text-white rounded-md"
+  />
+  <div className="p-3 border-t border-gray-200 dark:border-gray-600">
+    <Input
+      type="time"
+      value={newEvent.start_date ? format(new Date(newEvent.start_date), "HH:mm") : ""}
+      onChange={(e) => {
+        const [hours, minutes] = e.target.value.split(":");
+        const newDate = new Date(newEvent.start_date || new Date());
+        newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes));
+        const formattedDate = newDate.toISOString();
+        setNewEvent({ ...newEvent, start_date: formattedDate });
+        if (newEvent.end_date) {
+          fetchAvailableAgents(formattedDate, newEvent.end_date);
+        }
+      }}
+      className="bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-600 focus:ring-green-500"
+    />
+  </div>
+</div>
                   </PopoverContent>
                 </Popover>
               </div>
               {errors.start_date && <p className="text-red-500 text-sm mt-1">{errors.start_date}</p>}
             </div>
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <CalendarIcon className="text-green-500" />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !newEvent.end_date && "text-muted-foreground",
-                      )}
-                    >
-                      {newEvent.end_date ? formatDate(newEvent.end_date) : <span>Date et heure de fin</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={newEvent.end_date ? new Date(newEvent.end_date) : undefined}
-                      onSelect={(date) => {
-                        if (date) {
-                          const now = new Date()
-                          date.setHours(now.getHours(), now.getMinutes())
-                          const formattedDate = date.toISOString()
-                          setNewEvent({ ...newEvent, end_date: formattedDate })
-                          setErrors({ ...errors, end_date: validateField("end_date", formattedDate) })
-                          if (newEvent.start_date) {
-                            fetchAvailableAgents(newEvent.start_date, formattedDate)
-                          }
-                        }
-                      }}
-                      initialFocus
-                    />
-                    <div className="p-3 border-t border-border">
-                      <Input
-                        type="time"
-                        value={newEvent.end_date ? format(new Date(newEvent.end_date), "HH:mm") : ""}
-                        onChange={(e) => {
-                          const [hours, minutes] = e.target.value.split(":")
-                          const newDate = new Date(newEvent.end_date || new Date())
-                          newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes))
-                          const formattedDate = newDate.toISOString()
-                          setNewEvent({ ...newEvent, end_date: formattedDate })
-                          if (newEvent.start_date) {
-                            fetchAvailableAgents(newEvent.start_date, formattedDate)
-                          }
-                        }}
-                      />
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              {errors.end_date && <p className="text-red-500 text-sm mt-1">{errors.end_date}</p>}
-            </div>
+  <div className="flex items-center space-x-2">
+    <CalendarIcon className="text-green-500" />
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant={"outline"}
+          className={cn(
+            "w-full justify-start text-left font-normal bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-600",
+            !newEvent.end_date && "text-muted-foreground"
+          )}
+        >
+          {newEvent.end_date ? formatDate(newEvent.end_date) : <span>Date et heure de fin</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-auto p-0 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded-md shadow-md"
+        align="start"
+      >
+        <Calendar
+          mode="single"
+          selected={newEvent.end_date ? new Date(newEvent.end_date) : undefined}
+          onSelect={(date) => {
+            if (date) {
+              const now = new Date();
+              date.setHours(now.getHours(), now.getMinutes());
+              const formattedDate = date.toISOString();
+              setNewEvent({ ...newEvent, end_date: formattedDate });
+              setErrors({ ...errors, end_date: validateField("end_date", formattedDate) });
+              if (newEvent.start_date) {
+                fetchAvailableAgents(newEvent.start_date, formattedDate);
+              }
+            }
+          }}
+          initialFocus
+          className="bg-white dark:bg-gray-800 text-black dark:text-white rounded-t-md"
+        />
+        <div className="p-3 border-t border-gray-200 dark:border-gray-600">
+          <Input
+            type="time"
+            value={newEvent.end_date ? format(new Date(newEvent.end_date), "HH:mm") : ""}
+            onChange={(e) => {
+              const [hours, minutes] = e.target.value.split(":");
+              const newDate = new Date(newEvent.end_date || new Date());
+              newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes));
+              const formattedDate = newDate.toISOString();
+              setNewEvent({ ...newEvent, end_date: formattedDate });
+              if (newEvent.start_date) {
+                fetchAvailableAgents(newEvent.start_date, formattedDate);
+              }
+            }}
+            className="bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-600 focus:ring-green-500"
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  </div>
+  {errors.end_date && <p className="text-red-500 text-sm mt-1">{errors.end_date}</p>}
+</div>
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Users className="text-green-500" />
                 <Select
-                  onValueChange={(value) => {
-                    const agentId = Number(value)
-                    // Éviter les doublons
-                    if (!newEvent.agents.includes(agentId)) {
-                      const updatedAgents = [...newEvent.agents, agentId]
-                      setNewEvent({ ...newEvent, agents: updatedAgents })
-                      setErrors({ ...errors, agents: validateField("agents", updatedAgents) })
-                    }
-                  }}
-                  disabled={fetchingAgents || !newEvent.start_date || !newEvent.end_date}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue
-                      placeholder={
-                        fetchingAgents
-                          ? "Chargement des agents..."
-                          : !newEvent.start_date || !newEvent.end_date
-                            ? "Sélectionnez d'abord les dates"
-                            : "Sélectionnez les agents"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableAgents.length === 0 ? (
-                      <SelectItem value="no-agents" disabled>
-                        Aucun agent disponible pour ces dates
-                      </SelectItem>
-                    ) : (
-                      availableAgents.map((agent) => (
-                        <SelectItem key={agent.id} value={agent.id.toString()}>
-                          {agent.username}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+  onValueChange={(value) => {
+    const agentId = Number(value);
+    // Éviter les doublons
+    if (!newEvent.agents.includes(agentId)) {
+      const updatedAgents = [...newEvent.agents, agentId];
+      setNewEvent({ ...newEvent, agents: updatedAgents });
+      setErrors({ ...errors, agents: validateField("agents", updatedAgents) });
+    }
+  }}
+  disabled={fetchingAgents || !newEvent.start_date || !newEvent.end_date}
+>
+  <SelectTrigger className="w-full bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-600">
+    <SelectValue
+      placeholder={
+        fetchingAgents
+          ? "Chargement des agents..."
+          : !newEvent.start_date || !newEvent.end_date
+            ? "Sélectionnez d'abord les dates"
+            : "Sélectionnez les agents"
+      }
+    />
+  </SelectTrigger>
+  <SelectContent className="bg-white dark:bg-gray-800 text-black dark:text-white">
+    {availableAgents.length === 0 ? (
+      <SelectItem value="no-agents" disabled className="text-black dark:text-white">
+        Aucun agent disponible pour ces dates
+      </SelectItem>
+    ) : (
+      availableAgents.map((agent) => (
+        <SelectItem key={agent.id} value={agent.id.toString()}>
+          {agent.username}
+        </SelectItem>
+      ))
+    )}
+  </SelectContent>
+</Select>
               </div>
               {errors.agents && <p className="text-red-500 text-sm mt-1">{errors.agents}</p>}
 
