@@ -33,7 +33,6 @@ interface Message {
   id: number
   sender: User
   sender_name?: string
-  receiver_name?: string
   content: string
   is_read: boolean
   created_at: string
@@ -72,6 +71,7 @@ export default function AgentMessagingPage() {
   // Active tab: All, Unread
   const [activeTab, setActiveTab] = useState("all")
 
+  // Définir handleAuthError avec useCallback pour stabilité
   const handleAuthError = useCallback(() => {
     setError("Votre session a expiré. Veuillez vous reconnecter.")
     router.push("")
@@ -117,7 +117,6 @@ export default function AgentMessagingPage() {
       }
 
       const response = await fetch(`${apiUrl}/messaging/agents/`, {
-      const response = await fetch(`${apiUrl}/messaging/users/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
 
@@ -150,60 +149,10 @@ export default function AgentMessagingPage() {
       console.error("Erreur lors du chargement des utilisateurs:", error)
       setError("Impossible de charger la liste des utilisateurs")
     }
-  }
+  }, [handleAuthError])
 
-  useEffect(() => {
-    fetchCurrentUser()
-    fetchConversations()
-    fetchUnreadCount()
-    fetchUsers()
-
-    // Mettre à jour le compteur de messages non lus toutes les 30 secondes
-    const interval = setInterval(() => {
-      fetchUnreadCount()
-      fetchConversations()
-    }, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  // Effect to clear success message after 5 seconds
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        setSuccess(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [success])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  const fetchUnreadCount = async () => {
-    try {
-      const accessToken = await getAccessToken()
-      if (!accessToken) return
-
-      const response = await fetch(`${apiUrl}/messaging/unread-count/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-
-      if (!response.ok) return
-
-      const data = await response.json()
-      setUnreadCount(data.unread_count || 0)
-    } catch (error) {
-      console.error("Erreur lors du chargement du nombre de messages non lus:", error)
-    }
-  }
-
-  const fetchConversations = async () => {
+  // Récupérer les conversations
+  const fetchConversations = useCallback(async () => {
     setLoading(true)
     try {
       const accessToken = await getAccessToken()
@@ -225,38 +174,16 @@ export default function AgentMessagingPage() {
       }
 
       const data = await response.json()
-      console.log("Données de conversations reçues (agent):", data)
+      console.log("Données de conversations reçues:", data)
 
-      // Normaliser les données
-      let normalizedData = []
-
-      if (Array.isArray(data)) {
-        normalizedData = data
-      } else if (data && typeof data === "object") {
-        // Si c'est un objet avec une propriété contenant les données
-        const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
-        if (possibleArrayProps.length > 0) {
-          normalizedData = data[possibleArrayProps[0]]
-        }
-
-        // Si l'API renvoie un format différent, adapter ici
-        // Par exemple, si l'API renvoie { participant1, participant2 } au lieu de participants[]
-        normalizedData = normalizedData.map((conv: { participants: any; participant1: any; participant2: any }) => {
-          if (!conv.participants && (conv.participant1 || conv.participant2)) {
-            return {
-              ...conv,
-              participants: [conv.participant1, conv.participant2].filter(Boolean), // Filtrer les valeurs null/undefined
-            }
-          }
-          return conv
-        })
-      }
+      // Normaliser les données si nécessaire
+      const normalizedData = Array.isArray(data) ? data : []
 
       setConversations(normalizedData)
 
       // Si une conversation est sélectionnée, mettre à jour ses données
       if (selectedConversation) {
-        const updatedConversation = normalizedData.find((conv: { id: number }) => conv.id === selectedConversation.id)
+        const updatedConversation = normalizedData.find((conv) => conv.id === selectedConversation.id)
         if (updatedConversation) {
           setSelectedConversation(updatedConversation)
         }
@@ -267,6 +194,56 @@ export default function AgentMessagingPage() {
     } finally {
       setLoading(false)
     }
+  }, [handleAuthError, selectedConversation])
+
+  // Récupérer le nombre de messages non lus
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const accessToken = await getAccessToken()
+      if (!accessToken) return
+
+      const response = await fetch(`${apiUrl}/messaging/unread-count/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+
+      if (!response.ok) return
+
+      const data = await response.json()
+      setUnreadCount(data.unread_count || 0)
+    } catch (error) {
+      console.error("Erreur lors du chargement du nombre de messages non lus:", error)
+    }
+  }, [])
+
+  // useEffect principal
+  useEffect(() => {
+    fetchCurrentUser()
+    fetchUsers()
+    fetchConversations()
+    fetchUnreadCount()
+
+    // Mettre à jour le compteur de messages non lus toutes les 30 secondes
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [fetchCurrentUser, fetchUsers, fetchConversations, fetchUnreadCount])
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  // Effect to clear success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [success])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
   const searchConversations = async (query: string) => {
@@ -326,36 +303,10 @@ export default function AgentMessagingPage() {
       }
 
       const data = await response.json()
-      console.log("Messages reçus (agent):", data)
+      console.log("Messages reçus:", data)
 
-      // Normaliser les données
-      let normalizedData = []
-
-      if (Array.isArray(data)) {
-        normalizedData = data
-      } else if (data && typeof data === "object") {
-        // Si c'est un objet avec une propriété contenant les données
-        const possibleArrayProps = Object.keys(data).filter((key) => Array.isArray(data[key]))
-        if (possibleArrayProps.length > 0) {
-          normalizedData = data[possibleArrayProps[0]]
-        }
-      }
-
-      // Adapter les messages si nécessaire
-      normalizedData = normalizedData.map((msg: { sender: any; sender_id: any; sender_name: any }) => {
-        // Si le message n'a pas d'objet sender mais a un sender_id et sender_name
-        if (!msg.sender && msg.sender_id) {
-          return {
-            ...msg,
-            sender: {
-              id: msg.sender_id,
-              username: msg.sender_name || `Utilisateur ${msg.sender_id}`,
-              is_staff: false, // Par défaut, on suppose que ce n'est pas un admin
-            },
-          }
-        }
-        return msg
-      })
+      // Normaliser les données si nécessaire
+      const normalizedData = Array.isArray(data) ? data : []
 
       setMessages(normalizedData)
 
@@ -423,86 +374,6 @@ export default function AgentMessagingPage() {
     fetchMessages(conversation.id)
   }
 
-  const handleAuthError = () => {
-    setError("Votre session a expiré. Veuillez vous reconnecter.")
-    router.push("/login")
-  }
-
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString)
-      return format(date, "Pp", { locale: fr })
-    } catch (error) {
-      return "Date invalide"
-    }
-  }
-
-  const formatMessageTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString)
-      const today = new Date()
-
-      if (date.toDateString() === today.toDateString()) {
-        return format(date, "HH:mm", { locale: fr })
-      } else {
-        return format(date, "dd/MM/yyyy HH:mm", { locale: fr })
-      }
-    } catch (error) {
-      return "Heure invalide"
-    }
-  }
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-  }
-
-  // Fonction pour obtenir l'autre participant dans une conversation
-  const getOtherParticipant = (conversation: Conversation) => {
-    console.log("Conversation:", conversation)
-
-    // Si l'utilisateur courant n'est pas défini, retourner un utilisateur par défaut
-    if (!currentUser) {
-      console.error("Utilisateur courant non défini")
-      return { id: 0, username: "Utilisateur inconnu" }
-    }
-
-    // Vérifier si participants existe et est un tableau
-    if (conversation.participants && Array.isArray(conversation.participants)) {
-      console.log("Conversation participants (agent):", conversation.participants)
-      // Trouver le participant qui n'est PAS l'utilisateur courant
-      const otherParticipant = conversation.participants.find((p) => p.id !== currentUser.id)
-      if (otherParticipant) {
-        console.log("Autre participant trouvé:", otherParticipant)
-        return otherParticipant
-      }
-      // Si aucun autre participant n'est trouvé, retourner le premier participant
-      return conversation.participants[0]
-    }
-    // Si participants n'existe pas, vérifier participant1 et participant2
-    else if (conversation.participant1 && conversation.participant2) {
-      // Déterminer lequel des deux n'est pas l'utilisateur courant
-      if (conversation.participant1.id === currentUser.id) {
-        return conversation.participant2
-      } else {
-        return conversation.participant1
-      }
-    }
-
-    console.error("Aucun participant trouvé dans la conversation")
-    return { id: 0, username: "Utilisateur inconnu" }
-  }
-
-  // Filter conversations based on search term
-  const filteredConversations = conversations.filter((conversation) => {
-    const otherParticipant = getOtherParticipant(conversation)
-    return otherParticipant.username.toLowerCase().includes(searchTerm.toLowerCase())
-  })
-
-  // Ajouter une fonction pour créer une nouvelle conversation
   const createNewConversation = async (userId: number) => {
     try {
       const accessToken = await getAccessToken()
@@ -545,17 +416,9 @@ export default function AgentMessagingPage() {
     }
   }
 
-  // Ajouter une fonction pour démarrer une nouvelle conversation
   const startNewConversation = async (user: User) => {
     // Vérifier si une conversation existe déjà avec cet utilisateur
-    const existingConversation = conversations.find((conv) => {
-      if (conv.participants) {
-        return conv.participants.some((p) => p.id === user.id)
-      } else if (conv.participant1 && conv.participant2) {
-        return conv.participant1.id === user.id || conv.participant2.id === user.id
-      }
-      return false
-    })
+    const existingConversation = conversations.find((conv) => conv.participants.some((p) => p.id === user.id))
 
     if (existingConversation) {
       setSelectedConversation(existingConversation)
@@ -568,6 +431,59 @@ export default function AgentMessagingPage() {
       }
     }
   }
+
+  const formatMessageTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const today = new Date()
+
+    if (date.toDateString() === today.toDateString()) {
+      return format(date, "HH:mm", { locale: fr })
+    }
+  }
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+  }
+
+  // Fonction pour obtenir l'autre participant dans une conversation
+  const getOtherParticipant = (conversation: Conversation) => {
+    console.log("Conversation:", conversation)
+
+    // Si l'utilisateur courant n'est pas défini, retourner un utilisateur par défaut
+    if (!currentUser) {
+      console.error("Utilisateur courant non défini")
+      return { id: 0, username: "Utilisateur inconnu" }
+    }
+
+    // Trouver le participant qui n'est PAS l'utilisateur courant
+    const otherParticipant = conversation.participants.find((p) => p.id !== currentUser.id)
+    if (otherParticipant) {
+      console.log("Autre participant trouvé:", otherParticipant)
+      return otherParticipant
+    }
+
+    // Si aucun autre participant n'est trouvé, retourner le premier participant
+    return conversation.participants[0] || { id: 0, username: "Utilisateur inconnu" }
+  }
+
+  // Filter conversations based on search term and active tab
+  const filteredConversations = conversations.filter((conversation) => {
+    const otherParticipant = getOtherParticipant(conversation)
+    const matchesSearch = otherParticipant.username.toLowerCase().includes(searchTerm.toLowerCase())
+
+    if (activeTab === "unread") {
+      return matchesSearch && conversation.unread_count > 0
+    }
+
+    return matchesSearch
+  })
+
+  // Filter users for the new conversation tab based on search term
+  const filteredUsers = users.filter((user) => user.username.toLowerCase().includes(searchTerm.toLowerCase()))
 
   // Fonction pour déterminer si un message est de l'utilisateur courant
   const isMessageFromCurrentUser = (message: Message) => {
@@ -585,7 +501,6 @@ export default function AgentMessagingPage() {
       >
         <Card className="backdrop-blur-lg bg-white/90 border-none shadow-lg animated-border h-full">
           <CardHeader className="bg-green-800 text-white px-6 py-4">
-            {/* Modifier le titre de la page pour refléter le système unifié */}
             <CardTitle className="text-2xl font-bold flex items-center">
               <motion.div
                 initial={{ rotate: -10, scale: 0.9 }}
@@ -648,135 +563,196 @@ export default function AgentMessagingPage() {
                 </div>
               </div>
 
-              <ScrollArea className="flex-1">
-                <div className="p-2 space-y-1">
-                  {loading ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
-                      <p className="mt-2 text-gray-600">Chargement des conversations...</p>
-                    </div>
-                  ) : filteredConversations.length === 0 ? (
-                    <div className="text-center py-8">
-                      <MessageSquare className="h-12 w-12 text-green-500/30 mx-auto mb-2" />
-                      <p className="text-gray-600">Aucune conversation trouvée</p>
-                      <p className="text-sm text-gray-500">Les administrateurs pourront vous contacter ici.</p>
-                    </div>
-                  ) : (
-                    // Afficher les conversations avec le nom de l'administrateur
-                    filteredConversations.map((conversation) => {
-                      const otherParticipant = getOtherParticipant(conversation)
-
-                      return (
-                        <motion.div
-                          key={conversation.id}
-                          whileHover={{ scale: 1.01, backgroundColor: "rgba(240, 253, 244, 1)" }}
-                          whileTap={{ scale: 0.99 }}
-                          className={`p-3 rounded-md cursor-pointer transition-all ${
-                            selectedConversation?.id === conversation.id
-                              ? "bg-green-100"
-                              : conversation.unread_count > 0
-                                ? "bg-green-50"
-                                : ""
-                          }`}
-                          onClick={() => handleSelectConversation(conversation)}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <Avatar>
-                              <AvatarFallback className="bg-green-200 text-green-700">
-                                {getInitials(otherParticipant.username)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-center">
-                                <p className="font-medium truncate">{otherParticipant.username}</p>
-                                {conversation.last_message && (
-                                  <p className="text-xs text-gray-500">
-                                    {formatMessageTime(conversation.last_message.created_at)}
-                                  </p>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-500 truncate">
-                                {conversation.last_message?.content || "Nouvelle conversation"}
-                              </p>
-                            </div>
-                            {conversation.unread_count > 0 && (
-                              <Badge className="bg-green-500 text-white ml-2">{conversation.unread_count}</Badge>
-                            )}
-                          </div>
-                        </motion.div>
-                      )
-                    })
-                  )}
+              <Tabs defaultValue="all" className="h-full flex flex-col" onValueChange={setActiveTab}>
+                <div className="px-4 pt-2">
+                  <TabsList className="grid grid-cols-2 w-full bg-green-50">
+                    <TabsTrigger
+                      value="all"
+                      className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                    >
+                      Tous
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="unread"
+                      className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                    >
+                      Non lus {unreadCount > 0 && `(${unreadCount})`}
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
-              </ScrollArea>
 
-              {/* Ajouter un bouton pour créer une nouvelle conversation dans la barre latérale */}
-              <div className="p-4 border-t border-green-100 mt-auto">
-                <div className="flex flex-col space-y-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={fetchConversations}
-                    className="w-full text-green-600 hover:text-green-700 hover:bg-green-50 border-green-300"
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Actualiser
-                  </Button>
+                <TabsContent value="all" className="flex-1 overflow-hidden mt-0">
+                  <ScrollArea className="h-full">
+                    <div className="p-2 space-y-1">
+                      {loading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
+                          <p className="mt-2 text-gray-600">Chargement des conversations...</p>
+                        </div>
+                      ) : filteredConversations.length === 0 ? (
+                        <div className="text-center py-8">
+                          <MessageSquare className="h-12 w-12 text-green-500/30 mx-auto mb-2" />
+                          <p className="text-gray-600">Aucune conversation trouvée</p>
+                        </div>
+                      ) : (
+                        // Afficher les conversations avec le nom du destinataire
+                        filteredConversations.map((conversation) => {
+                          const otherParticipant = getOtherParticipant(conversation)
 
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="default" size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white">
-                        <Users className="h-4 w-4 mr-2" />
-                        Nouvelle conversation
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-0">
-                      <div className="p-4 border-b border-gray-200">
-                        <h4 className="font-medium">Sélectionner un utilisateur</h4>
-                        <p className="text-sm text-gray-500">Démarrez une nouvelle conversation</p>
-                      </div>
-                      <ScrollArea className="h-60">
-                        <div className="p-2">
-                          {users.length === 0 ? (
-                            <p className="text-center py-4 text-gray-500">Aucun utilisateur disponible</p>
-                          ) : (
-                            users.map((user) => (
-                              <motion.div
-                                key={user.id}
-                                whileHover={{ backgroundColor: "rgba(240, 253, 244, 1)" }}
-                                className="p-2 rounded-md cursor-pointer transition-all flex items-center space-x-2"
-                                onClick={() => {
-                                  startNewConversation(user)
-                                }}
-                              >
-                                <Avatar className="h-8 w-8">
-                                  <AvatarFallback
-                                    className={`text-xs ${user.is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"}`}
-                                  >
-                                    {getInitials(user.username)}
+                          return (
+                            <motion.div
+                              key={conversation.id}
+                              whileHover={{ scale: 1.01, backgroundColor: "rgba(240, 253, 244, 1)" }}
+                              whileTap={{ scale: 0.99 }}
+                              className={`p-3 rounded-md cursor-pointer transition-all ${
+                                selectedConversation?.id === conversation.id
+                                  ? "bg-green-100"
+                                  : conversation.unread_count > 0
+                                  ? "bg-green-50"
+                                  : ""
+                              }`}
+                              onClick={() => handleSelectConversation(conversation)}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <Avatar>
+                                  <AvatarFallback className="bg-green-200 text-green-700">
+                                    {getInitials(otherParticipant.username)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center">
-                                    <p className="font-medium text-sm truncate">{user.username}</p>
-                                    {user.is_staff && (
-                                      <Badge className="ml-2 bg-green-700 text-white text-xs">Administrateur</Badge>
-                                    )}
-                                    {user.is_agent && (
-                                      <Badge className="ml-2 bg-green-500 text-white text-xs">Agent</Badge>
+                                  <div className="flex justify-between items-center">
+                                    <p className="font-medium truncate">{otherParticipant.username}</p>
+                                    {conversation.last_message && (
+                                      <p className="text-xs text-gray-500">
+                                        {formatMessageTime(conversation.last_message.created_at)}
+                                      </p>
                                     )}
                                   </div>
-                                  {user.email && <p className="text-xs text-gray-500 truncate">{user.email}</p>}
+                                  <p className="text-sm text-gray-500 truncate">
+                                    {conversation.last_message?.content || "Nouvelle conversation"}
+                                  </p>
                                 </div>
-                              </motion.div>
-                            ))
-                          )}
+                                {conversation.unread_count > 0 && (
+                                  <Badge className="bg-green-500 text-white ml-2">{conversation.unread_count}</Badge>
+                                )}
+                              </div>
+                            </motion.div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="unread" className="flex-1 overflow-hidden mt-0">
+                  <ScrollArea className="h-full">
+                    <div className="p-2 space-y-1">
+                      {loading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
                         </div>
-                      </ScrollArea>
-                    </PopoverContent>
-                  </Popover>
+                      ) : filteredConversations.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-gray-600">Aucun message non lu</p>
+                        </div>
+                      ) : (
+                        filteredConversations.map((conversation) => {
+                          const otherParticipant = getOtherParticipant(conversation)
+
+                          return (
+                            <motion.div
+                              key={conversation.id}
+                              whileHover={{ scale: 1.01, backgroundColor: "rgba(240, 253, 244, 1)" }}
+                              className={`p-3 rounded-md cursor-pointer transition-all ${
+                                selectedConversation?.id === conversation.id ? "bg-green-100" : "bg-green-50"
+                              }`}
+                              onClick={() => handleSelectConversation(conversation)}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <Avatar>
+                                  <AvatarFallback className="bg-green-200 text-green-700">
+                                    {getInitials(otherParticipant.username)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex justify-between items-center">
+                                    <p className="font-medium truncate">{otherParticipant.username}</p>
+                                    <Badge className="bg-green-500 text-white ml-2">{conversation.unread_count}</Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-500 truncate">
+                                    {conversation.last_message?.content || "Nouvelle conversation"}
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+
+                <div className="p-4 border-t border-green-100 mt-auto">
+                  <Tabs defaultValue="recent">
+                    <TabsList className="grid grid-cols-2 w-full bg-green-50">
+                      <TabsTrigger
+                        value="recent"
+                        className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                      >
+                        Récents
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="new"
+                        className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                      >
+                        Nouveau
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="recent" className="mt-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-600">Conversations récentes</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={fetchConversations}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="new" className="mt-2 max-h-40 overflow-y-auto">
+                      <p className="text-sm text-gray-600 mb-2">Démarrer une nouvelle conversation</p>
+                      {users.length === 0 ? (
+                        <p className="text-sm text-gray-500">Aucun utilisateur disponible</p>
+                      ) : (
+                        // Afficher la liste des utilisateurs pour créer une nouvelle conversation
+                        filteredUsers.map((user) => (
+                          <motion.div
+                            key={user.id}
+                            whileHover={{ scale: 1.01, backgroundColor: "rgba(240, 253, 244, 1)" }}
+                            className="p-2 rounded-md cursor-pointer transition-all flex items-center space-x-2"
+                            onClick={() => startNewConversation(user)}
+                          >
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs bg-green-200 text-green-700">
+                                {getInitials(user.username)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{user.username}</p>
+                              {user.email && <p className="text-xs text-gray-500 truncate">{user.email}</p>}
+                            </div>
+                            <Button size="sm" variant="ghost" className="px-2">
+                              <ArrowRight className="h-4 w-4 text-green-600" />
+                            </Button>
+                          </motion.div>
+                        ))
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 </div>
-              </div>
+              </Tabs>
             </div>
 
             {/* Right side - Chat area */}
@@ -859,7 +835,7 @@ export default function AgentMessagingPage() {
                                 </div>
                                 {isFromCurrentUser && (
                                   <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="bg-green-200 text-green-700 text-xs">
+                                    <AvatarFallback className="bg-green-700 text-white text-xs">
                                       {getInitials("Moi")}
                                     </AvatarFallback>
                                   </Avatar>
@@ -911,7 +887,7 @@ export default function AgentMessagingPage() {
                   </motion.div>
                   <h3 className="text-xl font-medium text-gray-700 mb-2">Messagerie</h3>
                   <p className="text-gray-500 max-w-md text-center mb-4">
-                    Sélectionnez une conversation dans la barre latérale ou démarrez une nouvelle conversation.
+                    Sélectionnez une conversation existante ou démarrez une nouvelle conversation avec un utilisateur.
                   </p>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -940,22 +916,12 @@ export default function AgentMessagingPage() {
                                 }}
                               >
                                 <Avatar className="h-8 w-8">
-                                  <AvatarFallback
-                                    className={`text-xs ${user.is_staff ? "bg-green-700 text-white" : "bg-green-200 text-green-700"}`}
-                                  >
+                                  <AvatarFallback className="text-xs bg-green-200 text-green-700">
                                     {getInitials(user.username)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center">
-                                    <p className="font-medium text-sm truncate">{user.username}</p>
-                                    {user.is_staff && (
-                                      <Badge className="ml-2 bg-green-700 text-white text-xs">Administrateur</Badge>
-                                    )}
-                                    {user.is_agent && (
-                                      <Badge className="ml-2 bg-green-500 text-white text-xs">Agent</Badge>
-                                    )}
-                                  </div>
+                                  <p className="font-medium text-sm truncate">{user.username}</p>
                                   {user.email && <p className="text-xs text-gray-500 truncate">{user.email}</p>}
                                 </div>
                               </motion.div>
@@ -1003,4 +969,3 @@ export default function AgentMessagingPage() {
     </div>
   )
 }
-
