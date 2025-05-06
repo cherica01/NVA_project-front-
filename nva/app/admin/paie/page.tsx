@@ -256,23 +256,23 @@ export default function PaymentManagementPage() {
               <div className="flex items-center space-x-2">
                 <CreditCard className="text-green-500" />
                 <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Sélectionner un agent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {agents.length === 0 ? (
-                      <SelectItem value="no-agents" disabled>
-                        Aucun agent disponible
-                      </SelectItem>
-                    ) : (
-                      agents.map((agent) => (
-                        <SelectItem key={agent.id} value={agent.id.toString()}>
-                          {agent.username}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+  <SelectTrigger className="w-full bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-600">
+    <SelectValue placeholder="Sélectionner un agent" />
+  </SelectTrigger>
+  <SelectContent className="bg-white dark:bg-gray-800 text-black dark:text-white">
+    {agents.length === 0 ? (
+      <SelectItem value="no-agents" disabled className="text-black dark:text-white">
+        Aucun agent disponible
+      </SelectItem>
+    ) : (
+      agents.map((agent) => (
+        <SelectItem key={agent.id} value={agent.id.toString()}>
+          {agent.username}
+        </SelectItem>
+      ))
+    )}
+  </SelectContent>
+</Select>
               </div>
             </div>
 
