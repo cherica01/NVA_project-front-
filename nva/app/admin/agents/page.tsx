@@ -272,30 +272,30 @@ export default function AdminAgents() {
               <div className="flex items-center space-x-2">
                 <Users className="text-green-500" />
                 <Select
-                  value={editingAgent ? editingAgent.gender : newAgent.gender}
-                  onValueChange={(val) => {
-                    if (editingAgent) {
-                      setEditingAgent({ ...editingAgent, gender: val })
-                    } else {
-                      setNewAgent({ ...newAgent, gender: val })
-                      setErrors((prev) => ({
-                        ...prev,
-                        gender: validateField("gender", val),
-                      }))
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full border-green-300 focus:ring-green-500">
-                    <SelectValue placeholder="Genre" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GENDER_CHOICES.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+  value={editingAgent ? editingAgent.gender : newAgent.gender}
+  onValueChange={(val) => {
+    if (editingAgent) {
+      setEditingAgent({ ...editingAgent, gender: val });
+    } else {
+      setNewAgent({ ...newAgent, gender: val });
+      setErrors((prev) => ({
+        ...prev,
+        gender: validateField("gender", val),
+      }));
+    }
+  }}
+>
+  <SelectTrigger className="w-full border-green-300 focus:ring-green-500">
+    <SelectValue placeholder="Genre" />
+  </SelectTrigger>
+  <SelectContent className="bg-white dark:bg-gray-800 text-black dark:text-white">
+    {GENDER_CHOICES.map((option) => (
+      <SelectItem key={option.value} value={option.value}>
+        {option.label}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
                 {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
               </div>
               <div className="flex items-center space-x-2">
