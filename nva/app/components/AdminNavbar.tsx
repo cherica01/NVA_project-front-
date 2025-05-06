@@ -10,6 +10,7 @@ import {
   Users,
   Menu,
   X,
+  Award,
   LayoutDashboard
 } from "lucide-react"
 import Link from "next/link"
@@ -47,7 +48,7 @@ export default function AdminNavbar() {
               { icon: Home, label: "Présences", href: "/admin/presences" },
               { icon: MessageSquare, label: "Messages", href: "/admin/message" },
               { icon: Bell, label: "Notifications", href: "/admin/notification" },
-              { icon: Calendar, label: "Évaluations", href: "/admin/evaluation" },
+              { icon: Award, label: "Évaluations", href: "/admin/evaluation" },
             ].map((item) => (
               <Link
                 key={item.label}
