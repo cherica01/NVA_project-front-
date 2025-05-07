@@ -2917,11 +2917,6 @@ export default function AgentEvaluation() {
 
                       <div className="flex items-center gap-2 mt-1">
 
-                        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
-
-                          Score: {aiAnalysis.top_agent.score}/10
-
-                        </Badge>
 
                       </div>
 
