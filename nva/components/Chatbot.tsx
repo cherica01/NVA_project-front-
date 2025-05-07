@@ -47,7 +47,7 @@ export default function Chatbot({ title = "Assistant IA", userRole = "agent" }: 
       id: "welcome",
       content:
         userRole === "admin"
-          ? "Bonjour, Administrateur ! Je suis votre assistant virtuel. Comment puis-je vous aider avec la gestion aujourd'hui ?"
+          ? "Bonjour,Je suis votre assistant virtuel. Comment puis-je vous aider avec la gestion aujourd'hui ?"
           : "Bonjour ! Je suis votre assistant virtuel. Comment puis-je vous aider aujourd'hui ?",
       sender: "bot",
       timestamp: new Date(),
