@@ -362,7 +362,7 @@ export default function AgentPresencePage() {
         notes: notes.trim(),
       }
 
-      console.log("Données de présence envoyées:", presenceData)
+      
 
       const presenceResponse = await fetch(`${apiUrl}/presence/create/`, {
         method: "POST",
