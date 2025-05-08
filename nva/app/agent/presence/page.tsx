@@ -375,6 +375,7 @@ export default function AgentPresencePage() {
       })
 
   
+      console.log("Réponse brute du serveur:", responseText)
 
       setDebugInfo({
         request: presenceData,
