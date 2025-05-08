@@ -374,7 +374,7 @@ export default function AgentPresencePage() {
         body: JSON.stringify(presenceData),
       })
 
-  
+      const responseText = await presenceResponse.text()
       console.log("Réponse brute du serveur:", responseText)
 
       setDebugInfo({
