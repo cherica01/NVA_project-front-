@@ -20,7 +20,7 @@ export default function AgentNavbar() {
     role: "Agent",
   })
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  
 
   // Récupérer les informations de l'utilisateur connecté
   useEffect(() => {
