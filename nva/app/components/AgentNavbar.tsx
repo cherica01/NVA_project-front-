@@ -21,7 +21,6 @@ export default function AgentNavbar() {
   })
   const [loading, setLoading] = useState(true)
   
-
   // Récupérer les informations de l'utilisateur connecté
   useEffect(() => {
     const fetchUserData = async () => {
