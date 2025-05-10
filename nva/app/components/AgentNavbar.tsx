@@ -122,7 +122,7 @@ export default function AgentNavbar() {
         className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 backdrop-blur-lg bg-white/90 dark:bg-gray-900/90 border-r border-gray-200 dark:border-gray-800 flex flex-col`}
       >
         <div className="p-6 flex justify-center">
-          <Image src="/images/nva-logo.png" alt="NVA Logo" width={150} height={60} className="object-contain" />
+                  <Image src="/images/nva-logo.png" alt="NVA Logo"   className="object-contain -ml-4" margin-right = {-100} width={100} height={40}  />
         </div>
         <ScrollArea className="flex-1 h-[calc(100vh-12rem)]">
           <nav className="space-y-2 p-4">
