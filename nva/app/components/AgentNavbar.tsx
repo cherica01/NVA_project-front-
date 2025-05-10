@@ -17,7 +17,7 @@ export default function AgentNavbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userData, setUserData] = useState({
     name: "",
-    role: "Administrateur",
+    role: "Agent",
   })
   const [loading, setLoading] = useState(true)
   const router = useRouter()
