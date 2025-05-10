@@ -12,7 +12,7 @@ import {
   X,
   Award,
   LayoutDashboard,
-  LogOut,
+  
 } from "lucide-react"
 import Link from "next/link"
 import { ScrollArea } from "@/components/ui/scroll-area"
