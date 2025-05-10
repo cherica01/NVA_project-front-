@@ -19,7 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { getAccessToken } from "@/util/biscuit"
 import { apiUrl } from "@/util/config"
-import { useRouter } from "next/navigation"
+
 
 
 export default function AdminNavbar() {
