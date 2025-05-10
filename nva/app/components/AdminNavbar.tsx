@@ -29,7 +29,7 @@ export default function AdminNavbar() {
     role: "Administrateur",
   })
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  
 
   // Récupérer les informations de l'utilisateur connecté
   useEffect(() => {
