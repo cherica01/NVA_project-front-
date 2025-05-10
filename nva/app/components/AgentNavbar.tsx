@@ -123,7 +123,7 @@ export default function AgentNavbar() {
       >
         <div className="p-6 flex justify-center">
                   <Image src="/images/nva-logo.png" alt="NVA Logo"   className="object-contain -ml-4" margin-right = {-100} width={100} height={40}  />
-        </div>
+                </div>
         <ScrollArea className="flex-1 h-[calc(100vh-12rem)]">
           <nav className="space-y-2 p-4">
             {[
