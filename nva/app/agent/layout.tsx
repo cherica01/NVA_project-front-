@@ -7,7 +7,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+            <main className="lg:ml-64 p-4">{children}</main> {/* Ajout de lg:ml-64 pour les grands écrans */}
             <Chatbot userRole="agent" title="Assistant Agent" />
         </div>
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
