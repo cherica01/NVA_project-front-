@@ -1,5 +1,4 @@
 import AgentNavbar from "@/app/components/AgentNavbar";
-import { useState } from "react"
 import Chatbot from "@/components/Chatbot"
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
     return (
