@@ -12,5 +12,4 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         </div>
     );
 }
-        <Chatbot userRole="admin" title="Assistant AGENT" />
 
