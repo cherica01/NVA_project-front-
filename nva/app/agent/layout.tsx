@@ -1,6 +1,5 @@
 "use client"
 import AgentNavbar from "@/app/components/AgentNavbar";
-
 import { useState } from "react"
 import Chatbot from "@/components/Chatbot"
 
