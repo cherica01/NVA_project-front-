@@ -74,7 +74,7 @@ import {
 
 } from "recharts"
 
-import { format, subMonths } from "date-fns"
+import { format } from "date-fns" 
 
 import { fr } from "date-fns/locale"
 
