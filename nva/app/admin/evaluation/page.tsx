@@ -396,7 +396,7 @@ export default function AgentEvaluation() {
 
   // États pour les filtres et la pagination
 
-  const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), "yyyy-MM"))
+  const [selectedMonth ] = useState<string>(format(new Date(), "yyyy-MM"))
 
   const [selectedAgent, setSelectedAgent] = useState<string>("all")
 
