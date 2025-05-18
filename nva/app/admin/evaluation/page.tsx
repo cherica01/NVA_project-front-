@@ -1983,7 +1983,7 @@ export default function AgentEvaluation() {
 
         <div className="flex flex-col sm:flex-row gap-2">
 
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+      {/* <Select value={selectedMonth} onValueChange={setSelectedMonth}>
   <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
     <SelectValue placeholder="Sélectionner un mois" />
   </SelectTrigger>
