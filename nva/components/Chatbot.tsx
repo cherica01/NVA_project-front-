@@ -12,6 +12,7 @@ import { MessageCircle, Send, X, Minimize2, Maximize2, Bot, User, Calendar, MapP
 import { getAccessToken } from "@/util/biscuit"
 i
 import { apiUrl } from "@/util/config"
+
 interface EventActionData {
   title: string
   status?: string
