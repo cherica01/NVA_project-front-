@@ -15,7 +15,7 @@ import { apiUrl } from "@/util/config"
 interface EventActionData {
   title: string
   date: string
-  location: string
+  time: string
   description?: string
   agents?: string[]
 }
