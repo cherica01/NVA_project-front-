@@ -19,7 +19,6 @@ interface EventActionData {
   description?: string
   agents?: string[]
 }
-
 interface Message {
   id: string
   content: string
