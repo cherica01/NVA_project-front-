@@ -10,7 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge"
 import { MessageCircle, Send, X, Minimize2, Maximize2, Bot, User, Calendar, MapPin, Clock } from "lucide-react"
 import { getAccessToken } from "@/util/biscuit"
-i
+import { toast } from "@/hooks/use-toast"
 import { apiUrl } from "@/util/config"
 
 interface EventActionData {
